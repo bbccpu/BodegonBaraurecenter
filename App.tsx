@@ -8,6 +8,7 @@ import { BestSellersCarousel } from './components/BestSellersCarousel';
 import { ProductGrid } from './components/ProductGrid';
 import { AuthModal } from './components/AuthModal';
 import { TermsModal } from './components/TermsModal';
+import { categories } from './data/categories';
 import UserPanelLayout from './components/panel/UserPanelLayout';
 import Profile from './components/panel/Profile';
 import Caja from './components/panel/Caja';
@@ -18,35 +19,15 @@ import Analytics from './components/panel/Analytics';
 import Clientes from './components/panel/Clientes';
 import Pedidos from './components/panel/Pedidos';
 import Pagos from './components/panel/Pagos';
+import Marketing from './components/panel/Marketing';
+import Reportes from './components/panel/Reportes';
 import Usuarios from './components/panel/Usuarios';
 import Suministros from './components/panel/Suministros';
-
-const categories = [
-  {
-    name: 'Víveres',
-    subcategories: [
-      { name: 'Harinas' },
-      { name: 'Granos' },
-      { name: 'Aceites y Vinagres' },
-    ],
-  },
-  {
-    name: 'Licores',
-    subcategories: [
-      { name: 'Cervezas' },
-      { name: 'Vinos' },
-      { name: 'Ron' },
-    ],
-  },
-  {
-    name: 'Snacks y Dulces',
-    subcategories: [
-      { name: 'Chocolates' },
-      { name: 'Galletas' },
-      { name: 'Papitas' },
-    ],
-  },
-];
+import { payments as initialPayments } from './data/panelData';
+import { initialCustomers } from './data/customerData';
+import { initialOrders } from './data/orderData';
+import { initialCoupons } from './data/marketingData';
+import { initialProducts } from './data/initialProducts';
 
 import { CartProvider } from './context/CartContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -58,7 +39,7 @@ import { SocialLinks } from './components/SocialLinks';
 import { BackgroundProvider } from './context/BackgroundContext';
 // import { BackgroundSwitcher } from './components/BackgroundSwitcher';
 import './types';
-import { Product, Customer, Order, User, UserRole } from './types';
+import { Product, Customer, Order, Coupon, User, UserRole } from './types';
 import { supabase } from './lib/supabaseClient'; // Import Supabase client
 
 // Helper to manage localStorage (will be phased out)
@@ -196,9 +177,11 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
     const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
     
-    const [payments] = usePersistentState('bbc-payments', []);
-    const [customers, setCustomers] = usePersistentState('bbc-customers', []);
-    const [orders, setOrders] = usePersistentState('bbc-orders', []);
+    // Persist panel data (to be migrated)
+    const [payments] = usePersistentState('bbc-payments', initialPayments);
+    const [customers, setCustomers] = usePersistentState('bbc-customers', initialCustomers);
+    const [orders, setOrders] = usePersistentState('bbc-orders', initialOrders);
+    const [coupons, setCoupons] = usePersistentState('bbc-coupons', initialCoupons);
 
     const handleLoginSuccess = () => {
         setAuthModalOpen(false);
@@ -210,6 +193,13 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
         navigate('/');
     };
 
+    const handleAddCoupon = (newCoupon: Omit<Coupon, 'id'>) => {
+        setCoupons(prev => {
+            const newId = `CUP-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+            const finalCoupon: Coupon = { ...newCoupon, id: newId };
+            return [...prev, finalCoupon];
+        });
+    };
 
     const filteredProducts = useMemo(() => {
         if (!searchQuery.trim()) return [];
@@ -258,8 +248,10 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
                                 <Route path="analytic" element={<Analytics />} />
 
                                 {/* New Admin Routes */}
-                                <Route path="clientes" element={<Clientes />} />
-                                <Route path="pedidos" element={<Pedidos userRole={userRole} />} />
+                                <Route path="clientes" element={<Clientes customers={customers} />} />
+                                <Route path="pedidos" element={<Pedidos />} />
+                                <Route path="marketing" element={<Marketing coupons={coupons} onAddCoupon={handleAddCoupon} />} />
+                                <Route path="reportes" element={<Reportes />} />
                                 <Route path="usuarios" element={<Usuarios />} />
 
                             </Routes>
@@ -302,30 +294,23 @@ const AppWithProviders: React.FC = () => {
                 const { data, error } = await supabase.from('products').select('*');
                 if (error) {
                     console.error('Error fetching products from Supabase:', error);
-                    console.log('Using empty array as fallback');
-                    setProducts([]);
+                    console.log('Using local products as fallback');
+                    setProducts(initialProducts);
                 } else if (data && data.length > 0) {
                     console.log('Products loaded from Supabase:', data.length);
-                    // Filter out products with zero quantity (out of stock)
-                    const availableProducts = data.filter(product => product.quantity > 0);
-                    console.log('Available products (with stock):', availableProducts.length);
-                    setProducts(availableProducts);
+                    setProducts(data);
                 } else {
-                    console.log('No products in Supabase, using empty array');
-                    setProducts([]);
+                    console.log('No products in Supabase, using local products');
+                    setProducts(initialProducts);
                 }
             } catch (err) {
                 console.error('Unexpected error fetching products:', err);
-                setProducts([]);
+                setProducts(initialProducts);
             }
         };
         fetchProducts();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            // Refresh products when user logs in to ensure stock filtering
-            if (session) {
-                fetchProducts();
-            }
             console.log('Auth event:', _event);
             console.log('Session:', session);
             const loggedIn = !!session;
