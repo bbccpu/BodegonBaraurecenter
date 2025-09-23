@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bodegon Baraure Center 2025 C.A</title>
+    <link rel="icon" type="image/png" href="https://i.imgur.com/yuCfdF2.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style id="theme-variables">
+      :root {
+        --color-primary-dark: #004d40;
+        --color-primary-orange: #f57c00;
+        --color-primary-light-green: #a2c13c;
+        --color-primary-light-green-dark: #829a30;
+        --color-vibrant-red: #DC2626;
+        --color-vibrant-red-dark: #b01e1e;
+        --color-vinotinto: #8D1C3D;
+      }
+    </style>
+    <style id="background-styles">
+      .bg-carbon-fiber {
+        background-color: #282828;
+        background-image: 
+          linear-gradient(45deg, rgba(0, 0, 0, 0.2) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.2) 75%, rgba(0, 0, 0, 0.2)),
+          linear-gradient(-45deg, rgba(0, 0, 0, 0.2) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.2) 75%, rgba(0, 0, 0, 0.2));
+        background-size: 8px 8px;
+      }
+      .bg-dark-wood {
+        background-image: url('https://www.transparenttextures.com/patterns/dark-wood.png');
+        background-color: #3a322d;
+      }
+      .bg-geo-dots {
+        background-color: #0d1117;
+        background-image: radial-gradient(circle at 1px 1px, #2d333b 1px, transparent 0);
+        background-size: 20px 20px;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'primary-dark': 'var(--color-primary-dark)',
+              'primary-orange': 'var(--color-primary-orange)',
+              'primary-light-green': 'var(--color-primary-light-green)',
+              'primary-light-green-dark': 'var(--color-primary-light-green-dark)',
+              'vibrant-red': 'var(--color-vibrant-red)',
+              'vibrant-red-dark': 'var(--color-vibrant-red-dark)',
+              'vinotinto': 'var(--color-vinotinto)',
+            },
+            boxShadow: {
+              'neon-green': '0 0 5px var(--color-primary-light-green), 0 0 10px var(--color-primary-light-green), 0 0 20px var(--color-primary-light-green), 0 0 40px var(--color-primary-light-green)',
+              'neon-red': '0 0 5px var(--color-vibrant-red), 0 0 10px var(--color-vibrant-red), 0 0 20px var(--color-vibrant-red), 0 0 40px var(--color-vibrant-red)',
+            },
+            animation: {
+              'scroll': 'scroll 40s linear infinite',
+            },
+            keyframes: {
+              scroll: {
+                '0%': { transform: 'translateX(0)' },
+                '100%': { transform: 'translateX(-100%)' },
+              },
+            },
+          }
+        }
+      }
+    </script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    
+    <!-- Chart.js and adapter for interactive charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+  
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="text-white">
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
