@@ -19,14 +19,11 @@ import Analytics from './components/panel/Analytics';
 import Clientes from './components/panel/Clientes';
 import Pedidos from './components/panel/Pedidos';
 import Pagos from './components/panel/Pagos';
-import Marketing from './components/panel/Marketing';
-import Reportes from './components/panel/Reportes';
 import Usuarios from './components/panel/Usuarios';
 import Suministros from './components/panel/Suministros';
 import { payments as initialPayments } from './data/panelData';
 import { initialCustomers } from './data/customerData';
 import { initialOrders } from './data/orderData';
-import { initialCoupons } from './data/marketingData';
 import { initialProducts } from './data/initialProducts';
 
 import { CartProvider } from './context/CartContext';
@@ -39,7 +36,7 @@ import { SocialLinks } from './components/SocialLinks';
 import { BackgroundProvider } from './context/BackgroundContext';
 // import { BackgroundSwitcher } from './components/BackgroundSwitcher';
 import './types';
-import { Product, Customer, Order, Coupon, User, UserRole } from './types';
+import { Product, Customer, Order, User, UserRole } from './types';
 import { supabase } from './lib/supabaseClient'; // Import Supabase client
 
 // Helper to manage localStorage (will be phased out)
@@ -181,7 +178,6 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
     const [payments] = usePersistentState('bbc-payments', initialPayments);
     const [customers, setCustomers] = usePersistentState('bbc-customers', initialCustomers);
     const [orders, setOrders] = usePersistentState('bbc-orders', initialOrders);
-    const [coupons, setCoupons] = usePersistentState('bbc-coupons', initialCoupons);
 
     const handleLoginSuccess = () => {
         setAuthModalOpen(false);
@@ -193,13 +189,6 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
         navigate('/');
     };
 
-    const handleAddCoupon = (newCoupon: Omit<Coupon, 'id'>) => {
-        setCoupons(prev => {
-            const newId = `CUP-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-            const finalCoupon: Coupon = { ...newCoupon, id: newId };
-            return [...prev, finalCoupon];
-        });
-    };
 
     const filteredProducts = useMemo(() => {
         if (!searchQuery.trim()) return [];
@@ -248,10 +237,8 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
                                 <Route path="analytic" element={<Analytics />} />
 
                                 {/* New Admin Routes */}
-                                <Route path="clientes" element={<Clientes customers={customers} />} />
-                                <Route path="pedidos" element={<Pedidos />} />
-                                <Route path="marketing" element={<Marketing coupons={coupons} onAddCoupon={handleAddCoupon} />} />
-                                <Route path="reportes" element={<Reportes />} />
+                                <Route path="clientes" element={<Clientes />} />
+                                <Route path="pedidos" element={<Pedidos userRole={userRole} />} />
                                 <Route path="usuarios" element={<Usuarios />} />
 
                             </Routes>
