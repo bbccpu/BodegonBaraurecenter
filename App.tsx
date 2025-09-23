@@ -8,7 +8,6 @@ import { BestSellersCarousel } from './components/BestSellersCarousel';
 import { ProductGrid } from './components/ProductGrid';
 import { AuthModal } from './components/AuthModal';
 import { TermsModal } from './components/TermsModal';
-import { categories } from './data/categories';
 import UserPanelLayout from './components/panel/UserPanelLayout';
 import Profile from './components/panel/Profile';
 import Caja from './components/panel/Caja';
@@ -21,10 +20,33 @@ import Pedidos from './components/panel/Pedidos';
 import Pagos from './components/panel/Pagos';
 import Usuarios from './components/panel/Usuarios';
 import Suministros from './components/panel/Suministros';
-import { payments as initialPayments } from './data/panelData';
-import { initialCustomers } from './data/customerData';
-import { initialOrders } from './data/orderData';
-import { initialProducts } from './data/initialProducts';
+
+const categories = [
+  {
+    name: 'Víveres',
+    subcategories: [
+      { name: 'Harinas' },
+      { name: 'Granos' },
+      { name: 'Aceites y Vinagres' },
+    ],
+  },
+  {
+    name: 'Licores',
+    subcategories: [
+      { name: 'Cervezas' },
+      { name: 'Vinos' },
+      { name: 'Ron' },
+    ],
+  },
+  {
+    name: 'Snacks y Dulces',
+    subcategories: [
+      { name: 'Chocolates' },
+      { name: 'Galletas' },
+      { name: 'Papitas' },
+    ],
+  },
+];
 
 import { CartProvider } from './context/CartContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -174,10 +196,9 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
     const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
     
-    // Persist panel data (to be migrated)
-    const [payments] = usePersistentState('bbc-payments', initialPayments);
-    const [customers, setCustomers] = usePersistentState('bbc-customers', initialCustomers);
-    const [orders, setOrders] = usePersistentState('bbc-orders', initialOrders);
+    const [payments] = usePersistentState('bbc-payments', []);
+    const [customers, setCustomers] = usePersistentState('bbc-customers', []);
+    const [orders, setOrders] = usePersistentState('bbc-orders', []);
 
     const handleLoginSuccess = () => {
         setAuthModalOpen(false);
@@ -281,10 +302,8 @@ const AppWithProviders: React.FC = () => {
                 const { data, error } = await supabase.from('products').select('*');
                 if (error) {
                     console.error('Error fetching products from Supabase:', error);
-                    console.log('Using local products as fallback');
-                    // Filter local products to only show those with stock > 0
-                    const availableLocalProducts = initialProducts.filter(p => p.quantity > 0);
-                    setProducts(availableLocalProducts);
+                    console.log('Using empty array as fallback');
+                    setProducts([]);
                 } else if (data && data.length > 0) {
                     console.log('Products loaded from Supabase:', data.length);
                     // Filter out products with zero quantity (out of stock)
@@ -292,16 +311,12 @@ const AppWithProviders: React.FC = () => {
                     console.log('Available products (with stock):', availableProducts.length);
                     setProducts(availableProducts);
                 } else {
-                    console.log('No products in Supabase, using local products');
-                    // Filter local products to only show those with stock > 0
-                    const availableLocalProducts = initialProducts.filter(p => p.quantity > 0);
-                    setProducts(availableLocalProducts);
+                    console.log('No products in Supabase, using empty array');
+                    setProducts([]);
                 }
             } catch (err) {
                 console.error('Unexpected error fetching products:', err);
-                // Filter local products to only show those with stock > 0
-                const availableLocalProducts = initialProducts.filter(p => p.quantity > 0);
-                setProducts(availableLocalProducts);
+                setProducts([]);
             }
         };
         fetchProducts();
