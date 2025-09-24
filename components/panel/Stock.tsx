@@ -63,10 +63,11 @@ const Stock: React.FC = () => {
                 const newCode = `BBC${String(nextId).padStart(4, '0')}`;
 
                 // Transform keys to match database column names
+                const barcodeValue = scannedCode || (newProduct.barcode && newProduct.barcode !== '' ? newProduct.barcode : null);
                 const dbProduct = {
                     name: newProduct.name,
                     code: newCode,
-                    barcode: scannedCode, // Use scanned code as barcode
+                    barcode: barcodeValue,
                     price_usd: newProduct.price_usd,
                     quantity: newProduct.quantity,
                     category: newProduct.category,
@@ -108,10 +109,11 @@ const Stock: React.FC = () => {
 
         try {
             // Transform keys to match database column names
+            const barcodeValue = newProduct.barcode && newProduct.barcode !== '' ? newProduct.barcode : null;
             const dbProduct = {
                 name: newProduct.name,
                 code: newCode,
-                barcode: newProduct.barcode,
+                barcode: barcodeValue,
                 price_usd: newProduct.price_usd,
                 quantity: newProduct.quantity,
                 category: newProduct.category,
