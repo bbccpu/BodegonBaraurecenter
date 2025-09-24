@@ -191,12 +191,12 @@ const Stock: React.FC = () => {
                     <table className="w-full text-left">
                         <thead className="bg-gray-700">
                             <tr>
-                                <th className="p-4 font-semibold">Código</th>
-                                <th className="p-4 font-semibold">Producto</th>
-                                <th className="p-4 font-semibold">Categoría</th>
-                                <th className="p-4 font-semibold text-right">Precio (USD)</th>
-                                <th className="p-4 font-semibold text-right">Precio (BSS)</th>
-                                <th className="p-4 font-semibold text-center">Cantidad</th>
+                                <th className="p-2 md:p-4 font-semibold">Código</th>
+                                <th className="p-2 md:p-4 font-semibold">Producto</th>
+                                <th className="hidden sm:table-cell p-4 font-semibold">Categoría</th>
+                                <th className="p-2 md:p-4 font-semibold text-right">Precio (USD)</th>
+                                <th className="hidden md:table-cell p-4 font-semibold text-right">Precio (BSS)</th>
+                                <th className="p-2 md:p-4 font-semibold text-center">Cantidad</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -205,29 +205,33 @@ const Stock: React.FC = () => {
                                 const priceBSS = rate ? (priceUSD * rate) : null;
                                 return (
                                 <tr key={product.id} className="border-b border-gray-700 hover:bg-gray-700/50">
-                                    <td className="p-4 text-gray-400">{product.code}</td>
-                                    <td className="p-4 font-medium">{product.name}</td>
-                                    <td className="p-4 text-gray-300">{product.subcategory}</td>
+                                    <td className="p-2 md:p-4 text-gray-400 text-sm">{product.code}</td>
+                                    <td className="p-2 md:p-4 font-medium text-sm md:text-base">{product.name}</td>
+                                    <td className="hidden sm:table-cell p-4 text-gray-300 text-sm">{product.subcategory}</td>
                                     <td className="p-2 text-right">
                                         <input
                                             type="number"
+                                            id={`price-${product.id}`}
+                                            name="price_usd"
                                             defaultValue={priceUSD.toFixed(2)}
                                             onBlur={(e) => handlePriceChange(product.id, e.target.value)}
-                                            className="w-20 bg-gray-700 text-primary-orange text-right rounded border border-gray-600 focus:ring-1 focus:ring-primary-orange focus:border-primary-orange"
+                                            className="w-16 md:w-20 bg-gray-700 text-primary-orange text-right rounded border border-gray-600 focus:ring-1 focus:ring-primary-orange focus:border-primary-orange text-sm"
                                             min="0"
                                             step="0.01"
                                             aria-label={`Precio USD de ${product.name}`}
                                         />
                                     </td>
-                                    <td className="p-4 text-right text-green-400 font-semibold">
+                                    <td className="hidden md:table-cell p-4 text-right text-green-400 font-semibold text-sm">
                                         {loading ? 'Cargando...' : priceBSS !== null ? `${priceBSS.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs` : 'No disponible'}
                                     </td>
                                     <td className="p-2 text-center">
                                         <input
                                             type="number"
+                                            id={`quantity-${product.id}`}
+                                            name="quantity"
                                             defaultValue={product.quantity}
                                             onBlur={(e) => handleQuantityChange(product.id, e.target.value)}
-                                            className="w-20 bg-gray-700 text-white text-center rounded border border-gray-600 focus:ring-1 focus:ring-primary-orange focus:border-primary-orange"
+                                            className="w-16 md:w-20 bg-gray-700 text-white text-center rounded border border-gray-600 focus:ring-1 focus:ring-primary-orange focus:border-primary-orange text-sm"
                                             min="0"
                                             aria-label={`Cantidad de ${product.name}`}
                                         />
