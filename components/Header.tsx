@@ -14,11 +14,12 @@ interface HeaderProps {
     onSearch: (query: string) => void;
     isLoggedIn: boolean;
     onLogout: () => void;
+    onMenuClick?: () => void;
 }
 
 const slugify = (text: string) => text.toLowerCase().replace(/\s+/g, '-');
 
-export const Header: React.FC<HeaderProps> = ({ onRegisterClick, onSearch, isLoggedIn, onLogout }) => {
+export const Header: React.FC<HeaderProps> = ({ onRegisterClick, onSearch, isLoggedIn, onLogout, onMenuClick }) => {
     const { products } = useProducts();
     const [query, setQuery] = useState('');
     const [isUserMenuOpen, setUserMenuOpen] = useState(false);
@@ -61,9 +62,14 @@ export const Header: React.FC<HeaderProps> = ({ onRegisterClick, onSearch, isLog
     return (
         <header className="bg-gray-800 shadow-lg p-4 flex justify-between items-center sticky top-0 z-50">
             <div className="flex items-center space-x-2 md:space-x-4">
-                 <a href="/#">
-                    <Logo />
-                </a>
+                {onMenuClick && (
+                    <button onClick={onMenuClick} className="md:hidden text-white mr-2">
+                        <ion-icon name="menu-outline" style={{fontSize: '28px'}}></ion-icon>
+                    </button>
+                )}
+                  <a href="/#">
+                     <Logo />
+                 </a>
             </div>
 
             {/* Buscador y tasa oficial juntos */}
