@@ -13,7 +13,7 @@ const Stock: React.FC = () => {
     const [isScannerOpen, setScannerOpen] = useState(false);
     const [scannedCode, setScannedCode] = useState<string | null>(null);
     const [isManualAddOpen, setManualAddOpen] = useState(false);
-    const { products, updateProduct } = useProducts();
+    const { products, updateProduct, refreshProducts } = useProducts();
     
     const handleExport = () => {
         const data = products;
@@ -84,6 +84,8 @@ const Stock: React.FC = () => {
                 } else {
                     // The context will automatically update via real-time subscription
                     console.log('Product added successfully:', data);
+                    // Fallback: refresh products to ensure UI updates
+                    refreshProducts();
                 }
             } catch (error) {
                 console.error('Error adding product:', error);
@@ -127,6 +129,8 @@ const Stock: React.FC = () => {
             } else {
                 // The context will automatically update via real-time subscription
                 console.log('Product added successfully:', data);
+                // Fallback: refresh products to ensure UI updates
+                refreshProducts();
             }
         } catch (error) {
             console.error('Error adding product:', error);
