@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { HashRouter, Routes, Route, Link, useParams, useNavigate, Outlet, Navigate } from 'react-router-dom';
 import { Header } from './components/Header';
 import { MegaMenu } from './components/MegaMenu';
@@ -274,6 +274,7 @@ const AppWithProviders: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const navigate = useNavigate();
+    const authInitialized = useRef(false);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -298,8 +299,11 @@ const AppWithProviders: React.FC = () => {
         fetchProducts();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            console.log('Auth event:', _event);
-            console.log('Session:', session);
+            if (!authInitialized.current) {
+                console.log('Auth event:', _event);
+                console.log('Session:', session);
+                authInitialized.current = true;
+            }
             const loggedIn = !!session;
             setIsLoggedIn(loggedIn);
 
@@ -310,7 +314,9 @@ const AppWithProviders: React.FC = () => {
                     .eq('id', session.user.id)
                     .single();
 
-                console.log('Profile fetch result:', { profile, error });
+                if (!authInitialized.current) {
+                    console.log('Profile fetch result:', { profile, error });
+                }
 
                 if (error) {
                     console.error("Error fetching profile:", error);
