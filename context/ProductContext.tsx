@@ -47,8 +47,24 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({ children, init
         (payload) => {
           console.log('Product change detected:', payload);
 
+          // Transform database fields to match Product type
+          const transformProduct = (dbProduct: any): Product => ({
+            id: dbProduct.id,
+            name: dbProduct.name,
+            code: dbProduct.code,
+            barcode: dbProduct.barcode,
+            price_usd: dbProduct.price_usd,
+            quantity: dbProduct.quantity,
+            category: dbProduct.category,
+            subcategory: dbProduct.subcategory,
+            imageUrl: dbProduct.imageurl,
+            isBestSeller: dbProduct.isbestseller,
+            weight: dbProduct.weight,
+            weight_unit: dbProduct.weight_unit
+          });
+
           if (payload.eventType === 'UPDATE') {
-            const updatedProduct = payload.new as Product;
+            const updatedProduct = transformProduct(payload.new);
             setProducts(prevProducts => {
               const existingProductIndex = prevProducts.findIndex(p => p.id === updatedProduct.id);
 
@@ -75,7 +91,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({ children, init
             });
           } else if (payload.eventType === 'INSERT') {
             // Add new product only if it has stock
-            const newProduct = payload.new as Product;
+            const newProduct = transformProduct(payload.new);
             if (newProduct.quantity > 0) {
               setProducts(prevProducts => [...prevProducts, newProduct]);
             }
