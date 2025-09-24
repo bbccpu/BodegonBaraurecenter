@@ -58,12 +58,26 @@ const NavGroup: React.FC<{ title: string, children: React.ReactNode}> = ({ title
 };
 
 const UserPanelLayout: React.FC<{ children: React.ReactNode, userRole: UserRole | null }> = ({ children, userRole }) => {
+  const [isSidebarOpen, setSidebarOpen] = React.useState(false);
 
   return (
     <NotificationProvider userRole={userRole}>
       <div className="flex min-h-[calc(100vh-72px)]">
-        <aside className="w-64 bg-gray-800 p-4 flex-shrink-0">
-          <nav className="overflow-y-auto h-full">
+        {/* Mobile backdrop */}
+        <div
+          className={`fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden transition-opacity ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        ></div>
+
+        <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-gray-800 p-4 transform transition-transform duration-300 ease-in-out md:sticky md:translate-x-0 md:top-0 md:h-full md:flex-shrink-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="flex justify-between items-center mb-4 md:hidden">
+            <h2 className="text-xl font-bold text-white">Panel</h2>
+            <button onClick={() => setSidebarOpen(false)} className="text-white">
+              <ion-icon name="close-outline" style={{fontSize: '28px'}}></ion-icon>
+            </button>
+          </div>
+          <nav className="overflow-y-auto h-[calc(100%-4rem)] md:h-full">
             <ul>
               {userRole === 'T3' && mainLinks.map(link => <NavItem key={link.name} link={link} />)}
 
@@ -98,11 +112,13 @@ const UserPanelLayout: React.FC<{ children: React.ReactNode, userRole: UserRole 
         </aside>
         <main className="flex-1 bg-gray-900 overflow-y-auto">
           {/* Header with notifications */}
-          <div className="flex justify-between items-center p-6 border-b border-gray-700">
-            <div></div>
+          <div className="flex justify-between items-center p-4 md:p-6 border-b border-gray-700">
+            <button onClick={() => setSidebarOpen(true)} className="md:hidden text-white">
+              <ion-icon name="menu-outline" style={{fontSize: '28px'}}></ion-icon>
+            </button>
             <NotificationBell />
           </div>
-          <div className="p-6 md:p-4">
+          <div className="p-4 md:p-6">
             {children}
           </div>
         </main>
