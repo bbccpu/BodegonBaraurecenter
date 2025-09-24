@@ -112,16 +112,15 @@ const CategoryView = () => {
     );
 };
 
-const MemoizedStoreLayout = React.memo(({ onRegisterClick, onSearch, searchQuery, filteredProducts, userRole }: { onRegisterClick: () => void; onSearch: (query: string) => void; searchQuery: string; filteredProducts: Product[]; userRole: UserRole | null }) => {
+const MemoizedStoreLayout = React.memo(({ onRegisterClick, onSearch, searchQuery, filteredProducts, userRole, isMenuOpen, onMenuClose }: { onRegisterClick: () => void; onSearch: (query: string) => void; searchQuery: string; filteredProducts: Product[]; userRole: UserRole | null; isMenuOpen: boolean; onMenuClose: () => void }) => {
     const { products } = useProducts();
-    const [isMenuOpen, setMenuOpen] = useState(false);
     return (
         <>
             <main className="flex">
-                <MegaMenu 
+                <MegaMenu
                     categories={categories}
                     isOpen={isMenuOpen}
-                    onClose={() => setMenuOpen(false)}
+                    onClose={onMenuClose}
                 />
                 <div className="flex-1 p-4 md:p-6 overflow-x-hidden">
                     {/* Banner de tasa oficial eliminado, solo queda el del header */}
@@ -172,6 +171,7 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
     const [isTermsModalOpen, setTermsModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isMenuOpen, setMenuOpen] = useState(false);
     const navigate = useNavigate();
     
     // Persist panel data (to be migrated)
@@ -212,6 +212,7 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
                 onSearch={handleSearch}
                 isLoggedIn={isLoggedIn}
                 onLogout={handleLogout}
+                onMenuClick={() => setMenuOpen(true)}
             />
              <Routes>
                 <Route path="/cart" element={<CartPage />} />
@@ -222,6 +223,8 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
                         searchQuery={searchQuery}
                         filteredProducts={filteredProducts}
                         userRole={userRole}
+                        isMenuOpen={isMenuOpen}
+                        onMenuClose={() => setMenuOpen(false)}
                     />
                 } />
                 <Route path="/panel/*" element={
