@@ -57,15 +57,30 @@ const Stock: React.FC = () => {
     const handleAddProductFromScan = async (newProduct: Omit<Product, 'id' | 'code'>) => {
         if (scannedCode) {
             try {
+                // Transform keys to match database column names
+                const dbProduct = {
+                    name: newProduct.name,
+                    code: scannedCode,
+                    barcode: newProduct.barcode,
+                    price_usd: newProduct.price_usd,
+                    quantity: newProduct.quantity,
+                    category: newProduct.category,
+                    subcategory: newProduct.subcategory,
+                    imageurl: newProduct.imageUrl,
+                    isbestseller: newProduct.isBestSeller,
+                    weight: newProduct.weight,
+                    weight_unit: newProduct.weight_unit
+                };
+
                 const { data, error } = await supabase
                     .from('products')
-                    .insert([{ ...newProduct, code: scannedCode }])
+                    .insert([dbProduct])
                     .select()
                     .single();
 
                 if (error) {
                     console.error('Error adding product:', error);
-                    alert('Error al añadir producto');
+                    alert('Error al añadir producto: ' + error.message);
                 } else {
                     // The context will automatically update via real-time subscription
                     console.log('Product added successfully:', data);
@@ -85,15 +100,30 @@ const Stock: React.FC = () => {
         const newCode = `BBC${String(nextId).padStart(4, '0')}`;
 
         try {
+            // Transform keys to match database column names
+            const dbProduct = {
+                name: newProduct.name,
+                code: newCode,
+                barcode: newProduct.barcode,
+                price_usd: newProduct.price_usd,
+                quantity: newProduct.quantity,
+                category: newProduct.category,
+                subcategory: newProduct.subcategory,
+                imageurl: newProduct.imageUrl,
+                isbestseller: newProduct.isBestSeller,
+                weight: newProduct.weight,
+                weight_unit: newProduct.weight_unit
+            };
+
             const { data, error } = await supabase
                 .from('products')
-                .insert([{ ...newProduct, code: newCode }])
+                .insert([dbProduct])
                 .select()
                 .single();
 
             if (error) {
                 console.error('Error adding product:', error);
-                alert('Error al añadir producto');
+                alert('Error al añadir producto: ' + error.message);
             } else {
                 // The context will automatically update via real-time subscription
                 console.log('Product added successfully:', data);
