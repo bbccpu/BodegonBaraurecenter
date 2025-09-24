@@ -57,11 +57,16 @@ const Stock: React.FC = () => {
     const handleAddProductFromScan = async (newProduct: Omit<Product, 'id' | 'code'>) => {
         if (scannedCode) {
             try {
+                // Generate sequential code
+                const existingCodes = products.map(p => parseInt(p.code.replace('BBC', ''), 10)).filter(n => !isNaN(n));
+                const nextId = Math.max(0, ...existingCodes) + 1;
+                const newCode = `BBC${String(nextId).padStart(4, '0')}`;
+
                 // Transform keys to match database column names
                 const dbProduct = {
                     name: newProduct.name,
-                    code: scannedCode,
-                    barcode: newProduct.barcode,
+                    code: newCode,
+                    barcode: scannedCode, // Use scanned code as barcode
                     price_usd: newProduct.price_usd,
                     quantity: newProduct.quantity,
                     category: newProduct.category,
@@ -146,7 +151,7 @@ const Stock: React.FC = () => {
                 const { error } = await supabase
                     .from('products')
                     .update({ quantity: newQuantity })
-                    .eq('id', productId);
+                    .eq('id', productId.toString());
 
                 if (error) {
                     console.error('Error updating quantity:', error);
@@ -169,7 +174,7 @@ const Stock: React.FC = () => {
                 const { error } = await supabase
                     .from('products')
                     .update({ price_usd: newPrice })
-                    .eq('id', productId);
+                    .eq('id', productId.toString());
 
                 if (error) {
                     console.error('Error updating price:', error);
