@@ -36,7 +36,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({ children, init
   // Subscribe to real-time changes
   useEffect(() => {
     const channel = supabase
-      .channel('products-changes')
+      .channel('products')
       .on(
         'postgres_changes',
         {
