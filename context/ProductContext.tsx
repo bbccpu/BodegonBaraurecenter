@@ -106,7 +106,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({ children, init
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select('id, name, code, barcode, price_usd, imageurl as imageUrl, category, subcategory, isbestseller as isBestSeller, quantity, weight, weight_unit as weightUnit, created_at as createdAt')
         .order('name');
 
       if (error) {
