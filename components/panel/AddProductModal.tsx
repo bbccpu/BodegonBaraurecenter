@@ -104,7 +104,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="code" className="block text-sm font-medium text-gray-300 mb-1">Código Producto</label>
-                            <input id="code" name="code" type="text" value={scannedCode || 'Asignado Automáticamente'} className="w-full bg-gray-900 border border-gray-600 rounded-md py-2 px-3 text-gray-400" readOnly />
+                            <input id="code" name="code" type="text" value={'Asignado Automáticamente'} className="w-full bg-gray-900 border border-gray-600 rounded-md py-2 px-3 text-gray-400" readOnly />
                         </div>
                         <div>
                             <label htmlFor="barcode" className="block text-sm font-medium text-gray-300 mb-1">Código de Barra/QR (Opcional)</label>
