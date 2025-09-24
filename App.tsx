@@ -285,18 +285,14 @@ const AppWithProviders: React.FC = () => {
                 const { data, error } = await supabase.from('products').select('*');
                 if (error) {
                     console.error('Error fetching products from Supabase:', error);
-                    console.log('Using local products as fallback');
-                    setProducts(initialProducts);
-                } else if (data && data.length > 0) {
-                    console.log('Products loaded from Supabase:', data.length);
-                    setProducts(data);
+                    setProducts([]);
                 } else {
-                    console.log('No products in Supabase, using local products');
-                    setProducts(initialProducts);
+                    console.log('Products loaded from Supabase:', data?.length || 0);
+                    setProducts(data || []);
                 }
             } catch (err) {
                 console.error('Unexpected error fetching products:', err);
-                setProducts(initialProducts);
+                setProducts([]);
             }
         };
         fetchProducts();
