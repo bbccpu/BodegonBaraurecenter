@@ -60,7 +60,7 @@ const Stock: React.FC = () => {
                 // Generate sequential code
                 const existingCodes = products.map(p => parseInt(p.code.replace('BBC', ''), 10)).filter(n => !isNaN(n));
                 const nextId = Math.max(0, ...existingCodes) + 1;
-                const newCode = `BBC${String(nextId).padStart(4, '0')}`;
+                const newCode = `PBBC${String(nextId).padStart(4, '0')}`;
 
                 // Transform keys to match database column names
                 const barcodeValue = scannedCode || (newProduct.barcode && newProduct.barcode !== '' ? newProduct.barcode : null);
@@ -105,7 +105,7 @@ const Stock: React.FC = () => {
         // Generate a new code for the manually added product
         const existingCodes = products.map(p => parseInt(p.code.replace('BBC', ''), 10)).filter(n => !isNaN(n));
         const nextId = Math.max(0, ...existingCodes) + 1;
-        const newCode = `BBC${String(nextId).padStart(4, '0')}`;
+        const newCode = `PBBC${String(nextId).padStart(4, '0')}`;
 
         try {
             // Transform keys to match database column names
