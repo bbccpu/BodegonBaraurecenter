@@ -122,8 +122,27 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({ children, init
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, code, barcode, price_usd, imageurl as imageUrl, category, subcategory, isbestseller as isBestSeller, quantity, weight, weight_unit as weightUnit, created_at as createdAt')
+        .select('*')
         .order('name');
+
+      if (data) {
+        // Transform database fields to match Product type
+        const transformedData = data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          code: item.code,
+          barcode: item.barcode,
+          price_usd: item.price_usd,
+          quantity: item.quantity,
+          category: item.category,
+          subcategory: item.subcategory,
+          imageUrl: item.imageurl,
+          isBestSeller: item.isbestseller,
+          weight: item.weight,
+          weight_unit: item.weight_unit
+        }));
+        setProducts(transformedData);
+      }
 
       if (error) {
         console.error('Error refreshing products:', error);
