@@ -147,14 +147,16 @@ const MemoizedStoreLayout = React.memo(({ onRegisterClick, onSearch, searchQuery
 });
 
 const ProtectedRoute = ({ isLoggedIn, userRole, children }: { isLoggedIn: boolean; userRole: UserRole | null; children: React.ReactNode }) => {
-    const hasPermission = userRole === 'T2' || userRole === 'T3';
-    if (!isLoggedIn || !hasPermission) {
-        // Allow T1 users to access their profile, but nothing else in the panel.
-        if (isLoggedIn && userRole === 'T1' && window.location.hash.endsWith('/panel/profile')) {
-             return children;
-        }
+    // Allow access if logged in and has any role (T1, T2, T3)
+    if (!isLoggedIn) {
         return <Navigate to="/" replace />;
     }
+
+    // T1 users can only access their profile
+    if (userRole === 'T1' && !window.location.hash.endsWith('/panel/profile')) {
+        return <Navigate to="/panel/profile" replace />;
+    }
+
     return children;
 };
 
@@ -339,6 +341,10 @@ const AppWithProviders: React.FC = () => {
                                 navigate('/');
                         }
                     }
+                } else {
+                    // Profile doesn't exist, set default role
+                    console.warn("Profile not found for user, setting default role T1");
+                    setUserRole('T1');
                 }
             } else {
                 setUserRole(null);
