@@ -148,17 +148,20 @@ const Stock: React.FC = () => {
 
     const handleQuantityChange = async (productId: number, newQuantityStr: string) => {
         const newQuantity = parseInt(newQuantityStr, 10);
-        if (!isNaN(newQuantity)) {
+        if (!isNaN(newQuantity) && newQuantity >= 0) {
             try {
-                const { error } = await supabase
+                console.log('Updating quantity for product', productId, 'to', newQuantity);
+                const { error, data } = await supabase
                     .from('products')
                     .update({ quantity: newQuantity })
-                    .eq('id', productId.toString());
+                    .eq('id', productId.toString())
+                    .select();
 
                 if (error) {
                     console.error('Error updating quantity:', error);
-                    alert('Error al actualizar cantidad');
+                    alert('Error al actualizar cantidad: ' + error.message);
                 } else {
+                    console.log('Quantity updated successfully:', data);
                     // The context will automatically update via real-time subscription
                     updateProduct(productId, { quantity: newQuantity });
                 }
@@ -173,15 +176,18 @@ const Stock: React.FC = () => {
         const newPrice = parseFloat(newPriceStr);
         if (!isNaN(newPrice) && newPrice >= 0) {
             try {
-                const { error } = await supabase
+                console.log('Updating price for product', productId, 'to', newPrice);
+                const { error, data } = await supabase
                     .from('products')
                     .update({ price_usd: newPrice })
-                    .eq('id', productId.toString());
+                    .eq('id', productId.toString())
+                    .select();
 
                 if (error) {
                     console.error('Error updating price:', error);
-                    alert('Error al actualizar precio');
+                    alert('Error al actualizar precio: ' + error.message);
                 } else {
+                    console.log('Price updated successfully:', data);
                     // The context will automatically update via real-time subscription
                     updateProduct(productId, { price_usd: newPrice });
                 }
