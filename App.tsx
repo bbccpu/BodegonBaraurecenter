@@ -187,8 +187,18 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
     };
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
-        navigate('/');
+        try {
+            await supabase.auth.signOut();
+            setIsLoggedIn(false);
+            setUserRole(null);
+            navigate('/');
+        } catch (error) {
+            console.error('Error during logout:', error);
+            // Force logout even if there's an error
+            setIsLoggedIn(false);
+            setUserRole(null);
+            navigate('/');
+        }
     };
 
 
@@ -342,9 +352,9 @@ const AppWithProviders: React.FC = () => {
                         }
                     }
                 } else {
-                    // Profile doesn't exist, set default role
-                    console.warn("Profile not found for user, setting default role T1");
-                    setUserRole('T1');
+                    // Profile doesn't exist, don't set role to avoid blocking access
+                    console.warn("Profile not found for user, keeping current role");
+                    // Don't change userRole here to avoid overriding existing role
                 }
             } else {
                 setUserRole(null);
