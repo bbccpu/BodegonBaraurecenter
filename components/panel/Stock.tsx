@@ -103,11 +103,12 @@ const Stock: React.FC = () => {
 
     const handleManualAddProduct = async (newProduct: Omit<Product, 'id' | 'code'>) => {
         // Generate a new code for the manually added product
-        const existingCodes = products.map(p => parseInt(p.code.replace('BBC', ''), 10)).filter(n => !isNaN(n));
+        const existingCodes = products.map(p => parseInt(p.code.replace('PBBC', ''), 10)).filter(n => !isNaN(n));
         const nextId = Math.max(0, ...existingCodes) + 1;
         const newCode = `PBBC${String(nextId).padStart(4, '0')}`;
 
         try {
+            console.log('Inserting product:', { ...newProduct, code: newCode });
             // Transform keys to match database column names
             const barcodeValue = newProduct.barcode && newProduct.barcode !== '' ? newProduct.barcode : null;
             const dbProduct = {
@@ -134,8 +135,8 @@ const Stock: React.FC = () => {
                 console.error('Error adding product:', error);
                 alert('Error al añadir producto: ' + error.message);
             } else {
-                // The context will automatically update via real-time subscription
                 console.log('Product added successfully:', data);
+                // The context will automatically update via real-time subscription
                 // Fallback: refresh products to ensure UI updates
                 refreshProducts();
             }
