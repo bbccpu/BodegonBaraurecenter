@@ -75,8 +75,8 @@ const Stock: React.FC = () => {
                     quantity: newProduct.quantity,
                     category: newProduct.category,
                     subcategory: newProduct.subcategory,
-                    imageurl: newProduct.imageUrl,
-                    isbestseller: newProduct.isBestSeller,
+                    imageurl: newProduct.imageurl,
+                    isbestseller: newProduct.isbestseller,
                     weight: newProduct.weight,
                     weight_unit: newProduct.weight_unit
                 };
@@ -128,8 +128,8 @@ const Stock: React.FC = () => {
                 quantity: newProduct.quantity,
                 category: newProduct.category,
                 subcategory: newProduct.subcategory,
-                imageurl: newProduct.imageUrl,
-                isbestseller: newProduct.isBestSeller,
+                imageurl: newProduct.imageurl,
+                isbestseller: newProduct.isbestseller,
                 weight: newProduct.weight,
                 weight_unit: newProduct.weight_unit
             };
