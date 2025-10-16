@@ -9,15 +9,17 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { addToCart } = useCart();
-  const { rate, loading } = useDollarRate();
-  const { products } = useProducts();
+   const { addToCart } = useCart();
+   const { rate, loading } = useDollarRate();
+   const { products } = useProducts();
 
-  // Get real-time product data from context
-  const currentProduct = products.find(p => p.id === product.id) || product;
+   // Get real-time product data from context
+   const currentProduct = products.find(p => p.id === product.id) || product;
 
-  const priceUSD = currentProduct.price_usd; // Corrected: No fallback to obsolete .price
-  const priceBSS = rate ? (priceUSD * rate) : null;
+   console.log('Product imageUrl:', currentProduct.imageUrl);
+
+   const priceUSD = currentProduct.price_usd; // Corrected: No fallback to obsolete .price
+   const priceBSS = rate ? (priceUSD * rate) : null;
 
   return (
     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-primary-dark/40 border border-gray-700 transition-all duration-300 transform hover:-translate-y-2 group">
