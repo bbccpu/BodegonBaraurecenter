@@ -92,7 +92,7 @@ const CategoryView = () => {
     const { products } = useProducts();
 
     const subcategoryProducts = products.filter(p =>
-        p.subcategory.toLowerCase().replace(/\s+/g, '-') === subcategorySlug
+        p.subcategory && p.subcategory.toLowerCase().replace(/\s+/g, '-') === subcategorySlug
     );
     const subcategoryName = categories
         .flatMap(cat => cat.subcategories)
