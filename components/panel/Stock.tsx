@@ -108,7 +108,10 @@ const Stock: React.FC = () => {
         const newCode = `PBBC${String(nextId).padStart(4, '0')}`;
 
         try {
+            console.log('Current session:', await supabase.auth.getSession());
+            console.log('Current user:', await supabase.auth.getUser());
             console.log('Inserting product:', { ...newProduct, code: newCode });
+
             // Transform keys to match database column names
             const barcodeValue = newProduct.barcode && newProduct.barcode !== '' ? newProduct.barcode : null;
             const dbProduct = {
@@ -133,16 +136,17 @@ const Stock: React.FC = () => {
 
             if (error) {
                 console.error('Error adding product:', error);
-                alert('Error al añadir producto: ' + error.message);
+                alert('Error: ' + JSON.stringify(error));
             } else {
                 console.log('Product added successfully:', data);
+                alert('Success: ' + JSON.stringify(data));
                 // The context will automatically update via real-time subscription
                 // Fallback: refresh products to ensure UI updates
                 refreshProducts();
             }
         } catch (error) {
             console.error('Error adding product:', error);
-            alert('Error al añadir producto');
+            alert('Exception: ' + JSON.stringify(error));
         }
         setManualAddOpen(false); // Close modal
     };
