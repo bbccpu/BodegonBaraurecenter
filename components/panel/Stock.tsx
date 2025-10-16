@@ -57,8 +57,11 @@ const Stock: React.FC = () => {
     const handleAddProductFromScan = async (newProduct: Omit<Product, 'id' | 'code'>) => {
         if (scannedCode) {
             try {
+                console.log('Current session:', await supabase.auth.getSession());
+                console.log('Current user:', await supabase.auth.getUser());
+
                 // Generate sequential code
-                const existingCodes = products.map(p => parseInt(p.code.replace('BBC', ''), 10)).filter(n => !isNaN(n));
+                const existingCodes = products.map(p => parseInt(p.code.replace('PBBC', ''), 10)).filter(n => !isNaN(n));
                 const nextId = Math.max(0, ...existingCodes) + 1;
                 const newCode = `PBBC${String(nextId).padStart(4, '0')}`;
 
@@ -78,6 +81,8 @@ const Stock: React.FC = () => {
                     weight_unit: newProduct.weight_unit
                 };
 
+                console.log('Inserting product:', dbProduct);
+
                 const { data, error } = await supabase
                     .from('products')
                     .insert([dbProduct])
@@ -86,16 +91,17 @@ const Stock: React.FC = () => {
 
                 if (error) {
                     console.error('Error adding product:', error);
-                    alert('Error al añadir producto: ' + error.message);
+                    alert('Error: ' + JSON.stringify(error));
                 } else {
-                    // The context will automatically update via real-time subscription
                     console.log('Product added successfully:', data);
+                    alert('Success: ' + JSON.stringify(data));
+                    // The context will automatically update via real-time subscription
                     // Fallback: refresh products to ensure UI updates
                     refreshProducts();
                 }
             } catch (error) {
                 console.error('Error adding product:', error);
-                alert('Error al añadir producto');
+                alert('Exception: ' + JSON.stringify(error));
             }
         }
         setScannedCode(null); // Close modal
