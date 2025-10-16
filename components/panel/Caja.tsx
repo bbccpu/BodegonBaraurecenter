@@ -271,8 +271,7 @@ const Caja: React.FC = () => {
             console.log('Generated reference:', reference); // Debug log
 
             const orderData = {
-                customerName: selectedCustomer ? `${selectedCustomer.nombre} ${selectedCustomer.apellido}` : 'Cliente General',
-                customerId: selectedCustomer?.id || null,
+                customername: selectedCustomer ? `${selectedCustomer.nombre} ${selectedCustomer.apellido}` : 'Cliente General',
                 date: new Date().toISOString(),
                 total: total,
                 status: 'Completado',
