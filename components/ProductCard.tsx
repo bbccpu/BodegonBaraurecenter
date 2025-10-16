@@ -16,14 +16,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
    // Get real-time product data from context
    const currentProduct = products.find(p => p.id === product.id) || product;
 
-   console.log('Product imageUrl:', currentProduct.imageUrl);
+   console.log('Product imageUrl:', currentProduct.imageurl);
 
    const priceUSD = currentProduct.price_usd; // Corrected: No fallback to obsolete .price
    const priceBSS = rate ? (priceUSD * rate) : null;
 
-  return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-primary-dark/40 border border-gray-700 transition-all duration-300 transform hover:-translate-y-2 group">
-      <img className="w-full h-48 object-cover" src={product.imageUrl} alt={product.name} crossOrigin="anonymous" />
+   return (
+     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-primary-dark/40 border border-gray-700 transition-all duration-300 transform hover:-translate-y-2 group">
+       <img className="w-full h-48 object-cover" src={currentProduct.imageurl || 'https://picsum.photos/400/300?random=1'} alt={currentProduct.name} crossOrigin="anonymous" />
       <div className="p-4">
         <h3 className="text-lg font-bold text-white mb-2 group-hover:text-primary-light-green transition-colors">{product.name}</h3>
         <p className="text-gray-400 text-sm mb-2">Código: {product.code}</p>
