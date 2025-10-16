@@ -74,7 +74,7 @@ const MemoizedHome = React.memo(() => {
       {/* Best Sellers Section */}
       <div className="mt-8 md:mt-12 mb-12">
           <h2 className="text-2xl md:text-3xl font-bold mb-6">Productos Más Vendidos</h2>
-          <BestSellersCarousel products={products.filter(p => p.isBestSeller)} />
+          <BestSellersCarousel products={products.filter(p => p.isbestseller)} />
       </div>
 
       {/* All Products Section */}
