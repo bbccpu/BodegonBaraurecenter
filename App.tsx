@@ -352,9 +352,9 @@ const AppWithProviders: React.FC = () => {
                         }
                     }
                 } else {
-                    // Profile doesn't exist, don't set role to avoid blocking access
-                    console.warn("Profile not found for user, keeping current role");
-                    // Don't change userRole here to avoid overriding existing role
+                    // Profile doesn't exist, set default role T1
+                    console.warn("Profile not found for user, setting default role T1");
+                    setUserRole('T1');
                 }
             } else {
                 setUserRole(null);
