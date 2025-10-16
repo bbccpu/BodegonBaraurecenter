@@ -96,6 +96,7 @@ const Resumen: React.FC = () => {
     }, []);
 
     const fetchDashboardData = async () => {
+        console.log('Starting dashboard data fetch...');
         try {
             setLoading(true);
 
@@ -109,6 +110,7 @@ const Resumen: React.FC = () => {
             const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
 
             // Fetch today's sales
+            console.log('Fetching today orders...');
             const { data: todayOrders, error: todayError } = await supabase
                 .from('orders')
                 .select('total')
@@ -116,7 +118,11 @@ const Resumen: React.FC = () => {
                 .gte('date', startOfToday.toISOString())
                 .lte('date', endOfToday.toISOString());
 
-            if (todayError) throw todayError;
+            if (todayError) {
+                console.error('Today orders error:', todayError);
+                throw todayError;
+            }
+            console.log('Today orders fetched:', todayOrders?.length || 0);
 
             const todaySales = todayOrders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
 
@@ -225,6 +231,19 @@ const Resumen: React.FC = () => {
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
+            // Set default values to prevent infinite loading
+            setStats({
+                todaySales: 0,
+                monthlyRevenue: 0,
+                newCustomers: 0,
+                totalProducts: 0,
+                lowStockProducts: 0,
+                pendingOrders: 0,
+                completedOrders: 0
+            });
+            setWeeklySales([]);
+            setCategorySales([]);
+            setRecentOrders([]);
         } finally {
             setLoading(false);
         }
