@@ -222,20 +222,27 @@ const Caja: React.FC = () => {
     };
 
     const generatePaymentReference = async () => {
-        // Get the last reference from orders table
+        // Get all references from orders table to find the highest number
         const { data, error } = await supabase
             .from('orders')
             .select('payment_reference')
             .not('payment_reference', 'is', null)
-            .order('created_at', { ascending: false })
-            .limit(1);
+            .like('payment_reference', 'Pagosbbc%'); // Case-insensitive search for both Pagosbbc and pagosbbc
 
         let nextNumber = 1;
-        if (data && data.length > 0 && data[0].payment_reference) {
-            const lastRef = data[0].payment_reference;
-            const match = lastRef.match(/Pagosbbc(\d+)/);
-            if (match) {
-                nextNumber = parseInt(match[1]) + 1;
+        if (data && data.length > 0) {
+            // Extract all numbers from existing references (case-insensitive)
+            const numbers = data
+                .map(row => row.payment_reference)
+                .filter(ref => ref)
+                .map(ref => {
+                    const match = ref.match(/pagosbbc(\d+)/i); // Case-insensitive regex
+                    return match ? parseInt(match[1]) : 0;
+                })
+                .filter(num => num > 0);
+
+            if (numbers.length > 0) {
+                nextNumber = Math.max(...numbers) + 1;
             }
         }
 
