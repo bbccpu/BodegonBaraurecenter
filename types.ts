@@ -17,10 +17,10 @@ export interface Product {
   barcode?: string;
   price_usd: number; // Corrected: This is the main price from the DB
   price_bss?: number;
-  imageUrl: string;
+  imageurl: string; // Changed to match database field name
   category: string;
   subcategory: string;
-  isBestSeller?: boolean;
+  isbestseller?: boolean; // Changed to match database field name
   quantity: number;
   weight?: number;
   weight_unit?: string;
