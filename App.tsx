@@ -313,6 +313,9 @@ const AppWithProviders: React.FC = () => {
         fetchProducts();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            // Prevent multiple executions that cause infinite loops
+            if (authInitialized.current) return;
+
             console.log('Auth state change - Event:', _event, 'Session exists:', !!session);
             if (session) {
                 console.log('Session details:', {
@@ -320,11 +323,7 @@ const AppWithProviders: React.FC = () => {
                     expires_at: session.expires_at
                 });
             }
-            if (!authInitialized.current) {
-                console.log('Auth event:', _event);
-                console.log('Session:', session);
-                authInitialized.current = true;
-            }
+
             const loggedIn = !!session;
             setIsLoggedIn(loggedIn);
 
@@ -366,6 +365,8 @@ const AppWithProviders: React.FC = () => {
                     console.warn("Profile not found for user, setting default role T1");
                     setUserRole('T1');
                 }
+
+            authInitialized.current = true;
             } else {
                 setUserRole(null);
             }
