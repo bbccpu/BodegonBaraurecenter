@@ -313,6 +313,13 @@ const AppWithProviders: React.FC = () => {
         fetchProducts();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            console.log('Auth state change - Event:', _event, 'Session exists:', !!session);
+            if (session) {
+                console.log('Session details:', {
+                    user: session.user?.id,
+                    expires_at: session.expires_at
+                });
+            }
             if (!authInitialized.current) {
                 console.log('Auth event:', _event);
                 console.log('Session:', session);
