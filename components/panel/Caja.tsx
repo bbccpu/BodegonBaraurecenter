@@ -130,7 +130,8 @@ const Caja: React.FC = () => {
         const lowercasedQuery = searchQuery.toLowerCase();
         return products.filter(product =>
             product.name.toLowerCase().includes(lowercasedQuery) ||
-            product.code.toLowerCase().includes(lowercasedQuery)
+            product.code.toLowerCase().includes(lowercasedQuery) ||
+            (product.barcode && product.barcode.toLowerCase().includes(lowercasedQuery))
         ).slice(0, 5); // Limit results for performance
     }, [searchQuery, products]);
 
