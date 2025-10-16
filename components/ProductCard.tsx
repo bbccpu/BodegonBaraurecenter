@@ -21,7 +21,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-primary-dark/40 border border-gray-700 transition-all duration-300 transform hover:-translate-y-2 group">
-      <img className="w-full h-48 object-cover" src={product.imageUrl} alt={product.name} />
+      <img className="w-full h-48 object-cover" src={product.imageUrl} alt={product.name} crossOrigin="anonymous" />
       <div className="p-4">
         <h3 className="text-lg font-bold text-white mb-2 group-hover:text-primary-light-green transition-colors">{product.name}</h3>
         <p className="text-gray-400 text-sm mb-2">Código: {product.code}</p>
