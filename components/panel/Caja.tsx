@@ -353,6 +353,14 @@ const Caja: React.FC = () => {
             feed: '\n\n\n' // Feed paper
         };
 
+        // Calculate totals in Bs using current rate
+        const calculateItemTotalBs = (price: number, quantity: number) => {
+            const totalBs = (price * rate * quantity);
+            return totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+
+        const totalBs = (lastOrder.total * rate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
         const invoiceHTML = `
             <html>
             <head>
@@ -366,72 +374,80 @@ const Caja: React.FC = () => {
                         body {
                             width: 48mm;
                             font-family: 'Courier New', monospace;
-                            font-size: 10px;
-                            line-height: 1.2;
+                            font-size: 9px;
+                            line-height: 1.1;
                             margin: 0;
-                            padding: 2mm;
+                            padding: 1mm;
                         }
                     }
                     body {
                         font-family: 'Courier New', monospace;
-                        font-size: 10px;
-                        line-height: 1.2;
+                        font-size: 9px;
+                        line-height: 1.1;
                         max-width: 48mm;
                         margin: 0 auto;
-                        padding: 2mm;
+                        padding: 1mm;
                     }
                     .center { text-align: center; }
                     .bold { font-weight: bold; }
-                    .line { border-bottom: 1px solid #000; margin: 3px 0; }
-                    table { width: 100%; border-collapse: collapse; font-size: 9px; }
+                    .line { border-bottom: 1px solid #000; margin: 2px 0; }
+                    table { width: 100%; border-collapse: collapse; font-size: 8px; }
                     th, td { text-align: left; padding: 1px 0; }
-                    .total { font-weight: bold; font-size: 12px; }
-                    .small { font-size: 8px; }
+                    .total { font-weight: bold; font-size: 11px; }
+                    .small { font-size: 7px; }
+                    .tiny { font-size: 6px; }
                 </style>
             </head>
             <body>
                 <div class="center bold">
-                    BODEGÓN BARAURE CENTER C.A.<br>
-                    RIF: J-12345678-9<br>
-                    Tel: 0414-2122121<br>
-                    Caracas, Venezuela<br>
+                    BODEGÓN BARAURE CENTER 2025 C.A.<br>
+                    RIF: J-3507270106<br>
+                    <div class="tiny">
+                        CALLE 8 EDIF 2 BLOQUE 7 PISO PB<br>
+                        LOCAL 50 URB BARAURE SECTOR 2<br>
+                        ARAURE PORTUGUESA ZONA POSTAL 3303
+                    </div>
+                </div>
+                <div class="line"></div>
+                <div class="small center bold">
+                    EMITIDO POR: BODEGÓN BARAURE CENTER 2025 C.A.<br>
+                    RAZÓN SOCIAL: ${lastOrder.customerName || 'Cliente General'}<br>
+                    ${lastOrder.shipping_id ? `CÉDULA/RIF: ${lastOrder.shipping_id}` : ''}
                 </div>
                 <div class="line"></div>
                 <div class="small">
                     <strong>Factura:</strong> ${lastOrder.payment_reference}<br>
                     <strong>Fecha:</strong> ${new Date(lastOrder.date).toLocaleString('es-VE')}<br>
-                    <strong>Cliente:</strong> ${lastOrder.customerName}<br>
-                    <strong>Cédula:</strong> ${lastOrder.shipping_id}<br>
                 </div>
                 <div class="line"></div>
                 <table>
                     <tbody>
                         ${lastOrder.items.map((item: any) => `
                             <tr>
-                                <td colspan="4">${item.productName}</td>
+                                <td colspan="4" class="small">${item.productName}</td>
                             </tr>
                             <tr>
                                 <td>${item.quantity} x</td>
-                                <td>$${item.price.toFixed(2)}</td>
-                                <td colspan="2" style="text-align: right;">$${(item.price * item.quantity).toFixed(2)}</td>
+                                <td>${(item.price * rate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</td>
+                                <td colspan="2" style="text-align: right;">${calculateItemTotalBs(item.price, item.quantity)} Bs</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
                 <div class="line"></div>
                 <div class="total center">
-                    TOTAL: $${lastOrder.total.toFixed(2)}
+                    TOTAL: ${totalBs} Bs
                 </div>
                 <div class="center small">
                     <strong>Método:</strong> ${lastOrder.payment_method}<br>
                     ${lastOrder.payment_reference ? `<strong>Ref:</strong> ${lastOrder.payment_reference}` : ''}
                 </div>
                 <div class="line"></div>
-                <div class="center">
-                    ¡Gracias por su compra!<br>
-                    <span class="small">Conserve esta factura</span>
+                <div class="center tiny">
+                    ¡Gracias por su preferencia!<br>
+                    <span class="small">Conserve esta factura - Factura válida para crédito fiscal</span>
                 </div>
-                <div style="height: 10mm;"></div>
+                <div style="height: 8mm;"></div>
             </body>
             </html>
         `;
