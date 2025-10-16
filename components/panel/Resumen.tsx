@@ -372,11 +372,12 @@ const Resumen: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        if (!loading && weeklySales.length > 0) {
-            initializeCharts();
-        }
-    }, [loading, weeklySales, categorySales]);
+    // Temporarily disabled chart initialization to debug loading issue
+    // useEffect(() => {
+    //     if (!loading && weeklySales.length > 0) {
+    //         initializeCharts();
+    //     }
+    // }, [loading, weeklySales, categorySales]);
 
     const initializeCharts = () => {
         if (!Chart) return;
