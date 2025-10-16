@@ -292,6 +292,9 @@ const AppWithProviders: React.FC = () => {
     const authInitialized = useRef(false);
 
     useEffect(() => {
+        console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+        console.log('Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+
         const fetchProducts = async () => {
             try {
                 const { data, error } = await supabase.from('products').select('*');
