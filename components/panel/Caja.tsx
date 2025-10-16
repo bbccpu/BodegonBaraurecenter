@@ -34,8 +34,10 @@ const Caja: React.FC = () => {
     const [showCustomerModal, setShowCustomerModal] = useState(false);
     const [newCustomer, setNewCustomer] = useState<CustomerProfile>({});
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<string>('');
-    const [paymentReference, setPaymentReference] = useState<string>('');
+    const [paymentMethods, setPaymentMethods] = useState<Array<{method: string, amount: number, reference?: string}>>([]);
+    const [currentPaymentMethod, setCurrentPaymentMethod] = useState<string>('');
+    const [currentPaymentAmount, setCurrentPaymentAmount] = useState<string>('');
+    const [currentPaymentReference, setCurrentPaymentReference] = useState<string>('');
     const [lastOrder, setLastOrder] = useState<any>(null);
 
     const { products } = useProducts();
@@ -250,11 +252,35 @@ const Caja: React.FC = () => {
         return `Pagosbbc${nextNumber.toString().padStart(5, '0')}`;
     };
 
+    const addPaymentMethod = () => {
+        const amount = parseFloat(currentPaymentAmount);
+        if (!currentPaymentMethod || !amount || amount <= 0) {
+            alert('Seleccione método de pago e ingrese monto válido');
+            return;
+        }
+
+        const newPayment = {
+            method: currentPaymentMethod,
+            amount: amount,
+            reference: (currentPaymentMethod === 'pago_movil' || currentPaymentMethod === 'banco_venezuela' || currentPaymentMethod === 'cashea') ? currentPaymentReference : undefined
+        };
+
+        setPaymentMethods([...paymentMethods, newPayment]);
+        setCurrentPaymentMethod('');
+        setCurrentPaymentAmount('');
+        setCurrentPaymentReference('');
+    };
+
+    const removePaymentMethod = (index: number) => {
+        setPaymentMethods(paymentMethods.filter((_, i) => i !== index));
+    };
+
+    const totalPaid = paymentMethods.reduce((sum, payment) => sum + payment.amount, 0);
+
     const processPayment = async () => {
         console.log('processPayment function called'); // Debug log
         console.log('Cart:', cart); // Debug log
-        console.log('Payment method:', paymentMethod); // Debug log
-        console.log('Payment reference:', paymentReference); // Debug log
+        console.log('Payment methods:', paymentMethods); // Debug log
 
         // Allow processing without customer for walk-in customers
 
@@ -263,13 +289,23 @@ const Caja: React.FC = () => {
             return;
         }
 
-        if (!paymentMethod) {
-            alert('Debe seleccionar un método de pago');
+        if (paymentMethods.length === 0) {
+            alert('Debe agregar al menos un método de pago');
             return;
         }
 
-        if ((paymentMethod === 'pago_movil' || paymentMethod === 'banco_venezuela' || paymentMethod === 'cashea') && !paymentReference) {
-            alert('Debe ingresar la referencia de pago');
+        const remainingAmount = Math.max(0, total - totalPaid);
+        if (remainingAmount > 0) {
+            alert('El monto total no está cubierto por los métodos de pago');
+            return;
+        }
+
+        // Check references for methods that require them
+        const methodsNeedingReference = paymentMethods.filter(p =>
+            (p.method === 'pago_movil' || p.method === 'banco_venezuela' || p.method === 'cashea') && !p.reference
+        );
+        if (methodsNeedingReference.length > 0) {
+            alert('Debe ingresar referencias para métodos de pago que las requieren');
             return;
         }
 
@@ -289,7 +325,7 @@ const Caja: React.FC = () => {
                     quantity: item.orderQuantity,
                     price: item.price_usd
                 })),
-                payment_method: paymentMethod,
+                payment_methods: paymentMethods, // Store all payment methods
                 payment_reference: reference,
                 customer_email: selectedCustomer?.email,
                 payment_status: 'completed',
@@ -323,8 +359,10 @@ const Caja: React.FC = () => {
             setCart([]);
             setSelectedCustomer(null);
             setShowPaymentModal(false);
-            setPaymentMethod('');
-            setPaymentReference('');
+            setPaymentMethods([]);
+            setCurrentPaymentMethod('');
+            setCurrentPaymentAmount('');
+            setCurrentPaymentReference('');
 
             alert(`Pago procesado exitosamente. Referencia: ${reference}`);
 
@@ -660,14 +698,56 @@ const Caja: React.FC = () => {
             {/* Payment Modal */}
             {showPaymentModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md">
+                    <div className="bg-gray-800 p-6 rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
                         <h3 className="text-xl font-bold mb-4">Procesar Pago</h3>
-                        <div className="space-y-4">
+
+                        {/* Current Payment Methods */}
+                        {paymentMethods.length > 0 && (
+                            <div className="mb-4">
+                                <h4 className="text-lg font-semibold mb-2">Métodos de Pago Agregados:</h4>
+                                <div className="space-y-2">
+                                    {paymentMethods.map((payment, index) => (
+                                        <div key={index} className="flex justify-between items-center bg-gray-700 p-3 rounded-lg">
+                                            <div>
+                                                <span className="font-medium capitalize">{payment.method.replace('_', ' ')}</span>
+                                                {payment.reference && <span className="text-sm text-gray-400 ml-2">Ref: {payment.reference}</span>}
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <span className="font-bold">${payment.amount.toFixed(2)}</span>
+                                                <button
+                                                    onClick={() => removePaymentMethod(index)}
+                                                    className="text-red-400 hover:text-red-300"
+                                                >
+                                                    <ion-icon name="trash-outline"></ion-icon>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-2 p-2 bg-gray-700 rounded-lg">
+                                    <div className="flex justify-between">
+                                        <span>Total pagado:</span>
+                                        <span className="font-bold text-green-400">${totalPaid.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Restante:</span>
+                                        <span className={`font-bold ${Math.max(0, total - totalPaid) > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                                            ${Math.max(0, total - totalPaid).toFixed(2)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Add New Payment Method */}
+                        <div className="space-y-4 border-t border-gray-600 pt-4">
+                            <h4 className="text-lg font-semibold">Agregar Método de Pago:</h4>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">Método de Pago</label>
                                 <select
-                                    value={paymentMethod}
-                                    onChange={(e) => setPaymentMethod(e.target.value)}
+                                    value={currentPaymentMethod}
+                                    onChange={(e) => setCurrentPaymentMethod(e.target.value)}
                                     className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-orange"
                                 >
                                     <option value="">Seleccionar método</option>
@@ -680,27 +760,49 @@ const Caja: React.FC = () => {
                                 </select>
                             </div>
 
-                            {(paymentMethod === 'pago_movil' || paymentMethod === 'banco_venezuela' || paymentMethod === 'cashea') && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Monto</label>
+                                <input
+                                    type="number"
+                                    value={currentPaymentAmount}
+                                    onChange={(e) => setCurrentPaymentAmount(e.target.value)}
+                                    placeholder="0.00"
+                                    step="0.01"
+                                    min="0"
+                                    className="w-full bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                                />
+                            </div>
+
+                            {(currentPaymentMethod === 'pago_movil' || currentPaymentMethod === 'banco_venezuela' || currentPaymentMethod === 'cashea') && (
                                 <div>
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Referencia de Pago</label>
                                     <input
                                         type="text"
-                                        value={paymentReference}
-                                        onChange={(e) => setPaymentReference(e.target.value)}
+                                        value={currentPaymentReference}
+                                        onChange={(e) => setCurrentPaymentReference(e.target.value)}
                                         placeholder="Ingrese la referencia"
                                         className="w-full bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-orange"
                                     />
                                 </div>
                             )}
 
-                            <div className="text-center">
-                                <p className="text-lg font-bold">Total: ${total.toFixed(2)}</p>
-                            </div>
+                            <button
+                                onClick={addPaymentMethod}
+                                className="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Agregar Método de Pago
+                            </button>
                         </div>
+
+                        <div className="text-center mt-4 p-3 bg-gray-700 rounded-lg">
+                            <p className="text-xl font-bold">Total a Pagar: ${total.toFixed(2)}</p>
+                        </div>
+
                         <div className="flex space-x-4 mt-6">
                             <button
                                 onClick={processPayment}
-                                className="flex-1 bg-primary-orange text-white font-bold py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                                disabled={paymentMethods.length === 0 || Math.max(0, total - totalPaid) > 0}
+                                className="flex-1 bg-primary-orange text-white font-bold py-2 rounded-lg hover:bg-orange-600 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
                             >
                                 Confirmar Pago
                             </button>
