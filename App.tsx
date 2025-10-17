@@ -188,21 +188,13 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
 
     const handleLogout = async () => {
         try {
-            // Reset local state first
+            await supabase.auth.signOut();
             setIsLoggedIn(false);
             setUserRole(null);
-
-            // Sign out from Supabase
-            const { error } = await supabase.auth.signOut();
-            if (error) {
-                console.error('Supabase signOut error:', error);
-            }
-
-            // Navigate to home regardless
             navigate('/');
         } catch (error) {
             console.error('Error during logout:', error);
-            // Force state reset even on error
+            // Force logout even if there's an error
             setIsLoggedIn(false);
             setUserRole(null);
             navigate('/');
@@ -297,7 +289,7 @@ const AppWithProviders: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const navigate = useNavigate();
-    const authListenerRef = useRef<any>(null);
+    const authInitialized = useRef(false);
 
     useEffect(() => {
         console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
@@ -320,95 +312,67 @@ const AppWithProviders: React.FC = () => {
         };
         fetchProducts();
 
-        // Clean up previous listener
-        if (authListenerRef.current) {
-            authListenerRef.current.unsubscribe();
-        }
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            // Prevent multiple executions that cause infinite loops
+            if (authInitialized.current) return;
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('🔥 AUTH EVENT:', event, 'Session exists:', !!session, 'User:', session?.user?.id);
-
-            // Prevent unnecessary re-processing for TOKEN_REFRESHED events
-            if (event === 'TOKEN_REFRESHED') {
-                console.log('🔄 Token refreshed, skipping profile fetch');
-                return;
+            console.log('Auth state change - Event:', _event, 'Session exists:', !!session);
+            if (session) {
+                console.log('Session details:', {
+                    user: session.user?.id,
+                    expires_at: session.expires_at
+                });
             }
 
             const loggedIn = !!session;
             setIsLoggedIn(loggedIn);
 
-            if (loggedIn && session) {
-                try {
-                    console.log('🔥 Fetching profile for user:', session.user.id);
+            if (loggedIn) {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', session.user.id)
+                    .single();
 
-                    const { data: profile, error } = await supabase
-                        .from('profiles')
-                        .select('role')
-                        .eq('id', session.user.id)
-                        .single();
+                if (!authInitialized.current) {
+                    console.log('Profile fetch result:', { profile, error });
+                }
 
-                    console.log('🔥 Profile fetch result:', { profile, error });
-
-                    if (error) {
-                        console.error("❌ Profile fetch error:", error);
-                        // If profile doesn't exist, create it
-                        if (error.code === 'PGRST116') {
-                            console.log('🔥 Profile not found, creating default profile');
-                            const { error: insertError } = await supabase
-                                .from('profiles')
-                                .insert([{ id: session.user.id, role: 'T1' }]);
-
-                            if (insertError) {
-                                console.error('❌ Error creating profile:', insertError);
-                            } else {
-                                console.log('✅ Default profile created');
-                                setUserRole('T1');
-                            }
-                        } else {
-                            setUserRole('T1'); // Safe fallback
-                        }
-                    } else if (profile) {
-                        const role = profile.role as UserRole;
-                        console.log('✅ Profile loaded, role:', role);
-                        setUserRole(role);
-
-                        // Only redirect on SIGNED_IN
-                        if (event === 'SIGNED_IN') {
-                            switch (role) {
-                                case 'T3':
-                                    navigate('/panel/resumen');
-                                    break;
-                                case 'T2':
-                                    navigate('/panel/caja');
-                                    break;
-                                case 'T1':
-                                    navigate('/panel/profile');
-                                    break;
-                                default:
-                                    navigate('/');
-                            }
+                if (error) {
+                    console.error("Error fetching profile:", error);
+                    setUserRole(null);
+                } else if (profile) {
+                    const role = profile.role as UserRole;
+                    setUserRole(role);
+                    // On initial sign-in, redirect based on role
+                    if (_event === 'SIGNED_IN') {
+                        switch (role) {
+                            case 'T3':
+                                navigate('/panel/resumen');
+                                break;
+                            case 'T2':
+                                navigate('/panel/caja');
+                                break;
+                            case 'T1':
+                                navigate('/panel/profile');
+                                break;
+                            default:
+                                navigate('/');
                         }
                     }
-                } catch (err) {
-                    console.error('❌ Unexpected error in auth:', err);
-                    setUserRole('T1'); // Safe fallback
+                } else {
+                    // Profile doesn't exist, set default role T1
+                    console.warn("Profile not found for user, setting default role T1");
+                    setUserRole('T1');
                 }
+
+            authInitialized.current = true;
             } else {
-                console.log('🔥 User logged out or no session, event:', event);
                 setUserRole(null);
-                if (event === 'SIGNED_OUT') {
-                    navigate('/');
-                }
             }
         });
 
-        authListenerRef.current = subscription;
-
-        return () => {
-            if (authListenerRef.current) {
-                authListenerRef.current.unsubscribe();
-            }
-        };
+        return () => subscription.unsubscribe();
     }, [navigate]);
 
     return (
