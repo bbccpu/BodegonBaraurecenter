@@ -175,7 +175,6 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
     const [searchQuery, setSearchQuery] = useState('');
     const [isMenuOpen, setMenuOpen] = useState(false);
     const navigate = useNavigate();
-    const authInitialized = useRef(false);
     
     // Persist panel data (to be migrated)
     const [payments] = usePersistentState('bbc-payments', initialPayments);
@@ -189,22 +188,23 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
 
     const handleLogout = async () => {
         try {
-            // Reset auth state first
+            // Reset local state first
             setIsLoggedIn(false);
             setUserRole(null);
-            authInitialized.current = false;
 
-            // Then sign out
-            await supabase.auth.signOut();
+            // Sign out from Supabase
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                console.error('Supabase signOut error:', error);
+            }
 
-            // Navigate to home
+            // Navigate to home regardless
             navigate('/');
         } catch (error) {
             console.error('Error during logout:', error);
-            // Force logout even if there's an error
+            // Force state reset even on error
             setIsLoggedIn(false);
             setUserRole(null);
-            authInitialized.current = false;
             navigate('/');
         }
     };
@@ -297,7 +297,8 @@ const AppWithProviders: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const navigate = useNavigate();
-    const authInitialized = useRef(false);
+    const authListenerRef = useRef<any>(null);
+    const isInitializingRef = useRef(true);
 
     useEffect(() => {
         console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
@@ -320,8 +321,13 @@ const AppWithProviders: React.FC = () => {
         };
         fetchProducts();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            console.log('Auth state change - Event:', _event, 'Session exists:', !!session);
+        // Clean up previous listener
+        if (authListenerRef.current) {
+            authListenerRef.current.unsubscribe();
+        }
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth event:', event, 'Session:', !!session);
 
             const loggedIn = !!session;
             setIsLoggedIn(loggedIn);
@@ -336,13 +342,13 @@ const AppWithProviders: React.FC = () => {
 
                     if (error) {
                         console.error("Error fetching profile:", error);
-                        setUserRole(null);
+                        setUserRole('T1'); // Default fallback
                     } else if (profile) {
                         const role = profile.role as UserRole;
                         setUserRole(role);
 
                         // Only redirect on SIGNED_IN event
-                        if (_event === 'SIGNED_IN') {
+                        if (event === 'SIGNED_IN') {
                             switch (role) {
                                 case 'T3':
                                     navigate('/panel/resumen');
@@ -357,24 +363,28 @@ const AppWithProviders: React.FC = () => {
                                     navigate('/');
                             }
                         }
-                    } else {
-                        // Profile doesn't exist, set default role T1
-                        console.warn("Profile not found for user, setting default role T1");
-                        setUserRole('T1');
                     }
                 } catch (err) {
-                    console.error("Unexpected error in auth state change:", err);
-                    setUserRole(null);
+                    console.error("Unexpected error in auth:", err);
+                    setUserRole('T1'); // Safe fallback
                 }
             } else {
                 setUserRole(null);
-                if (_event === 'SIGNED_OUT') {
+                if (event === 'SIGNED_OUT') {
                     navigate('/');
                 }
             }
+
+            // No need for complex initialization tracking
         });
 
-        return () => subscription.unsubscribe();
+        authListenerRef.current = subscription;
+
+        return () => {
+            if (authListenerRef.current) {
+                authListenerRef.current.unsubscribe();
+            }
+        };
     }, [navigate]);
 
     return (
