@@ -326,7 +326,13 @@ const AppWithProviders: React.FC = () => {
         }
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('🔥 Auth event:', event, 'Session:', !!session);
+            console.log('🔥 AUTH EVENT:', event, 'Session exists:', !!session, 'User:', session?.user?.id);
+
+            // Prevent unnecessary re-processing for TOKEN_REFRESHED events
+            if (event === 'TOKEN_REFRESHED') {
+                console.log('🔄 Token refreshed, skipping profile fetch');
+                return;
+            }
 
             const loggedIn = !!session;
             setIsLoggedIn(loggedIn);
@@ -388,7 +394,7 @@ const AppWithProviders: React.FC = () => {
                     setUserRole('T1'); // Safe fallback
                 }
             } else {
-                console.log('🔥 User logged out or no session');
+                console.log('🔥 User logged out or no session, event:', event);
                 setUserRole(null);
                 if (event === 'SIGNED_OUT') {
                     navigate('/');
