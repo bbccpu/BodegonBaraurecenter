@@ -24,6 +24,7 @@ export interface Product {
   quantity: number;
   weight?: number;
   weight_unit?: string;
+  iva_status?: 'E' | 'N'; // E = Exento, N = No exento
 }
 
 export interface CartItem extends Product {
