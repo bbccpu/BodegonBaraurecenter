@@ -175,6 +175,7 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
     const [searchQuery, setSearchQuery] = useState('');
     const [isMenuOpen, setMenuOpen] = useState(false);
     const navigate = useNavigate();
+    const authInitialized = useRef(false);
     
     // Persist panel data (to be migrated)
     const [payments] = usePersistentState('bbc-payments', initialPayments);
@@ -188,15 +189,22 @@ const App: React.FC<AppProps> = ({ products, setProducts, isLoggedIn, setIsLogge
 
     const handleLogout = async () => {
         try {
-            await supabase.auth.signOut();
+            // Reset auth state first
             setIsLoggedIn(false);
             setUserRole(null);
+            authInitialized.current = false;
+
+            // Then sign out
+            await supabase.auth.signOut();
+
+            // Navigate to home
             navigate('/');
         } catch (error) {
             console.error('Error during logout:', error);
             // Force logout even if there's an error
             setIsLoggedIn(false);
             setUserRole(null);
+            authInitialized.current = false;
             navigate('/');
         }
     };
@@ -313,62 +321,56 @@ const AppWithProviders: React.FC = () => {
         fetchProducts();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            // Prevent multiple executions that cause infinite loops
-            if (authInitialized.current) return;
-
             console.log('Auth state change - Event:', _event, 'Session exists:', !!session);
-            if (session) {
-                console.log('Session details:', {
-                    user: session.user?.id,
-                    expires_at: session.expires_at
-                });
-            }
 
             const loggedIn = !!session;
             setIsLoggedIn(loggedIn);
 
-            if (loggedIn) {
-                const { data: profile, error } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', session.user.id)
-                    .single();
+            if (loggedIn && session) {
+                try {
+                    const { data: profile, error } = await supabase
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', session.user.id)
+                        .single();
 
-                if (!authInitialized.current) {
-                    console.log('Profile fetch result:', { profile, error });
-                }
+                    if (error) {
+                        console.error("Error fetching profile:", error);
+                        setUserRole(null);
+                    } else if (profile) {
+                        const role = profile.role as UserRole;
+                        setUserRole(role);
 
-                if (error) {
-                    console.error("Error fetching profile:", error);
-                    setUserRole(null);
-                } else if (profile) {
-                    const role = profile.role as UserRole;
-                    setUserRole(role);
-                    // On initial sign-in, redirect based on role
-                    if (_event === 'SIGNED_IN') {
-                        switch (role) {
-                            case 'T3':
-                                navigate('/panel/resumen');
-                                break;
-                            case 'T2':
-                                navigate('/panel/caja');
-                                break;
-                            case 'T1':
-                                navigate('/panel/profile');
-                                break;
-                            default:
-                                navigate('/');
+                        // Only redirect on SIGNED_IN event
+                        if (_event === 'SIGNED_IN') {
+                            switch (role) {
+                                case 'T3':
+                                    navigate('/panel/resumen');
+                                    break;
+                                case 'T2':
+                                    navigate('/panel/caja');
+                                    break;
+                                case 'T1':
+                                    navigate('/panel/profile');
+                                    break;
+                                default:
+                                    navigate('/');
+                            }
                         }
+                    } else {
+                        // Profile doesn't exist, set default role T1
+                        console.warn("Profile not found for user, setting default role T1");
+                        setUserRole('T1');
                     }
-                } else {
-                    // Profile doesn't exist, set default role T1
-                    console.warn("Profile not found for user, setting default role T1");
-                    setUserRole('T1');
+                } catch (err) {
+                    console.error("Unexpected error in auth state change:", err);
+                    setUserRole(null);
                 }
-
-            authInitialized.current = true;
             } else {
                 setUserRole(null);
+                if (_event === 'SIGNED_OUT') {
+                    navigate('/');
+                }
             }
         });
 
