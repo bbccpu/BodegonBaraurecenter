@@ -18,10 +18,11 @@ const initialFormData = {
     quantity: 0,
     category: categories[0]?.name || '',
     subcategory: categories[0]?.subcategories[0]?.name || '',
-    imageUrl: '',
-    isBestSeller: false,
+    imageurl: '',
+    isbestseller: false,
     weight: 0,
     weight_unit: 'unid',
+    iva_status: 'N' as 'E' | 'N', // Default to No exento
 };
 
 const weightUnits = ['unid', 'kg', 'g', 'l', 'ml'];
@@ -80,7 +81,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
             quantity: Number(formData.quantity) || 0,
             weight: Number(formData.weight) || 0,
             weight_unit: formData.weight_unit || 'unid',
-            imageUrl: formData.imageUrl || `https://picsum.photos/400/300?random=${Math.floor(Math.random() * 1000)}`,
+            imageurl: formData.imageurl || `https://picsum.photos/400/300?random=${Math.floor(Math.random() * 1000)}`,
+            iva_status: formData.iva_status || 'N',
         };
 
         console.log("Llamando a onSubmit del modal con el producto:", finalProduct); // TRACER 2
@@ -135,9 +137,9 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                             <input id="quantity" name="quantity" type="number" value={formData.quantity} onChange={handleChange} className="w-full bg-gray-700 border border-gray-500 rounded-md py-2 px-3 text-white" min="0" required />
                         </div>
                          <div>
-                            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-300 mb-1">URL de la Imagen (Opcional)</label>
-                            <input id="imageUrl" name="imageUrl" type="text" value={formData.imageUrl} onChange={handleChange} className="w-full bg-gray-700 border border-gray-500 rounded-md py-2 px-3 text-white" placeholder="https://ejemplo.com/imagen.png" />
-                        </div>
+                              <label htmlFor="imageurl" className="block text-sm font-medium text-gray-300 mb-1">URL de la Imagen (Opcional)</label>
+                              <input id="imageurl" name="imageurl" type="text" value={formData.imageurl} onChange={handleChange} className="w-full bg-gray-700 border border-gray-500 rounded-md py-2 px-3 text-white" placeholder="https://ejemplo.com/imagen.png" />
+                          </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -168,11 +170,20 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                         </div>
                     </div>
 
-                     <div className="flex items-center gap-4 pt-2">
-                        <label htmlFor="isBestSeller" className="flex items-center text-sm text-gray-300">
-                            <input id="isBestSeller" name="isBestSeller" type="checkbox" checked={formData.isBestSeller} onChange={handleChange} className="h-4 w-4 rounded bg-gray-700 border-gray-600 text-primary-orange focus:ring-primary-orange" />
-                            <span className="ml-2">Marcar como Más Vendido</span>
-                        </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label htmlFor="iva_status" className="block text-sm font-medium text-gray-300 mb-1">Estado IVA</label>
+                            <select id="iva_status" name="iva_status" value={formData.iva_status} onChange={handleChange} className="w-full bg-gray-700 border border-gray-500 rounded-md py-2 px-3 text-white">
+                                <option value="N">No Exento (Se cobra IVA)</option>
+                                <option value="E">Exento (Sin IVA)</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center">
+                            <label htmlFor="isbestseller" className="flex items-center text-sm text-gray-300">
+                                <input id="isbestseller" name="isbestseller" type="checkbox" checked={formData.isbestseller} onChange={handleChange} className="h-4 w-4 rounded bg-gray-700 border-gray-600 text-primary-orange focus:ring-primary-orange" />
+                                <span className="ml-2">Marcar como Más Vendido</span>
+                            </label>
+                        </div>
                     </div>
 
                     <button type="submit" className="w-full bg-primary-orange text-white font-bold py-3 px-4 rounded-md hover:bg-orange-600 transition-colors duration-300 mt-6">
