@@ -328,7 +328,8 @@ const Caja: React.FC = () => {
                     productId: item.id,
                     productName: item.name,
                     quantity: item.orderQuantity,
-                    price: item.price_usd
+                    price: item.price_usd,
+                    iva_status: item.iva_status || 'N'
                 })),
                 payment_method: paymentMethodsText, // Store as formatted text
                 payment_reference: reference,
