@@ -314,6 +314,11 @@ const Caja: React.FC = () => {
             const reference = await generatePaymentReference();
             console.log('Generated reference:', reference); // Debug log
 
+            // Convert payment methods array to a formatted string for storage
+            const paymentMethodsText = paymentMethods.map(p =>
+                `${p.method.replace('_', ' ').toUpperCase()}: $${p.amount.toFixed(2)}${p.reference ? ` (Ref: ${p.reference})` : ''}`
+            ).join(' | ');
+
             const orderData = {
                 customername: selectedCustomer ? `${selectedCustomer.nombre} ${selectedCustomer.apellido}` : 'Cliente General',
                 date: new Date().toISOString(),
@@ -325,7 +330,7 @@ const Caja: React.FC = () => {
                     quantity: item.orderQuantity,
                     price: item.price_usd
                 })),
-                payment_methods: paymentMethods, // Store all payment methods
+                payment_method: paymentMethodsText, // Store as formatted text
                 payment_reference: reference,
                 customer_email: selectedCustomer?.email,
                 payment_status: 'completed',
