@@ -298,7 +298,6 @@ const AppWithProviders: React.FC = () => {
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const navigate = useNavigate();
     const authListenerRef = useRef<any>(null);
-    const isInitializingRef = useRef(true);
 
     useEffect(() => {
         console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
@@ -327,27 +326,47 @@ const AppWithProviders: React.FC = () => {
         }
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth event:', event, 'Session:', !!session);
+            console.log('🔥 Auth event:', event, 'Session:', !!session);
 
             const loggedIn = !!session;
             setIsLoggedIn(loggedIn);
 
             if (loggedIn && session) {
                 try {
+                    console.log('🔥 Fetching profile for user:', session.user.id);
+
                     const { data: profile, error } = await supabase
                         .from('profiles')
                         .select('role')
                         .eq('id', session.user.id)
                         .single();
 
+                    console.log('🔥 Profile fetch result:', { profile, error });
+
                     if (error) {
-                        console.error("Error fetching profile:", error);
-                        setUserRole('T1'); // Default fallback
+                        console.error("❌ Profile fetch error:", error);
+                        // If profile doesn't exist, create it
+                        if (error.code === 'PGRST116') {
+                            console.log('🔥 Profile not found, creating default profile');
+                            const { error: insertError } = await supabase
+                                .from('profiles')
+                                .insert([{ id: session.user.id, role: 'T1' }]);
+
+                            if (insertError) {
+                                console.error('❌ Error creating profile:', insertError);
+                            } else {
+                                console.log('✅ Default profile created');
+                                setUserRole('T1');
+                            }
+                        } else {
+                            setUserRole('T1'); // Safe fallback
+                        }
                     } else if (profile) {
                         const role = profile.role as UserRole;
+                        console.log('✅ Profile loaded, role:', role);
                         setUserRole(role);
 
-                        // Only redirect on SIGNED_IN event
+                        // Only redirect on SIGNED_IN
                         if (event === 'SIGNED_IN') {
                             switch (role) {
                                 case 'T3':
@@ -365,17 +384,16 @@ const AppWithProviders: React.FC = () => {
                         }
                     }
                 } catch (err) {
-                    console.error("Unexpected error in auth:", err);
+                    console.error('❌ Unexpected error in auth:', err);
                     setUserRole('T1'); // Safe fallback
                 }
             } else {
+                console.log('🔥 User logged out or no session');
                 setUserRole(null);
                 if (event === 'SIGNED_OUT') {
                     navigate('/');
                 }
             }
-
-            // No need for complex initialization tracking
         });
 
         authListenerRef.current = subscription;
