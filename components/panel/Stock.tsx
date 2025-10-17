@@ -78,7 +78,8 @@ const Stock: React.FC = () => {
                     imageurl: newProduct.imageurl,
                     isbestseller: newProduct.isbestseller,
                     weight: newProduct.weight,
-                    weight_unit: newProduct.weight_unit
+                    weight_unit: newProduct.weight_unit,
+                    iva_status: newProduct.iva_status
                 };
 
                 console.log('Inserting product:', dbProduct);
@@ -131,7 +132,8 @@ const Stock: React.FC = () => {
                 imageurl: newProduct.imageurl,
                 isbestseller: newProduct.isbestseller,
                 weight: newProduct.weight,
-                weight_unit: newProduct.weight_unit
+                weight_unit: newProduct.weight_unit,
+                iva_status: newProduct.iva_status
             };
 
             const { data, error } = await supabase
