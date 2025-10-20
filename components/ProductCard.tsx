@@ -20,9 +20,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
    const priceBSS = rate ? (priceUSD * rate) : null;
 
    // Special handling for "OTROS" product - allow price editing
-   const isOtrosProduct = currentProduct.code === 'PBBC9590006200624';
+   const isOtrosProduct = currentProduct.name === 'OTROS';
 
-   console.log('Product code:', currentProduct.code, 'isOtrosProduct:', isOtrosProduct);
+   console.log('Product name:', currentProduct.name, 'code:', currentProduct.code, 'isOtrosProduct:', isOtrosProduct);
 
    // State for custom price editing
    const [customPrice, setCustomPrice] = React.useState(priceUSD.toString());
