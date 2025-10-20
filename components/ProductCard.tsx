@@ -11,7 +11,7 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
    const { addToCart } = useCart();
    const { rate, loading } = useDollarRate();
-   const { products } = useProducts();
+   const { products, updateProduct } = useProducts();
 
    // Get real-time product data from context
    const currentProduct = products.find(p => p.id === product.id) || product;
@@ -21,6 +21,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
    // Special handling for "OTROS" product - allow price editing
    const isOtrosProduct = currentProduct.code === 'PBBC9590006200624';
+
+   // State for custom price editing
+   const [customPrice, setCustomPrice] = React.useState(priceUSD.toString());
+
+   // Update custom price when product price changes
+   React.useEffect(() => {
+     if (isOtrosProduct) {
+       setCustomPrice(priceUSD.toString());
+     }
+   }, [priceUSD, isOtrosProduct]);
 
    return (
      <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-primary-dark/40 border border-gray-700 transition-all duration-300 transform hover:-translate-y-2 group">
@@ -35,18 +45,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 <span className="text-primary-orange font-bold text-lg">Precio:</span>
                 <input
                   type="number"
-                  defaultValue={priceUSD.toFixed(2)}
+                  value={customPrice}
+                  onChange={(e) => setCustomPrice(e.target.value)}
                   onBlur={(e) => {
                     const newPrice = parseFloat(e.target.value);
                     if (!isNaN(newPrice) && newPrice >= 0) {
-                      // Update price in context (this will trigger real-time update)
-                      // Note: This is a client-side update, in production you'd want to save to database
+                      // Update price in context for this session
+                      updateProduct(currentProduct.id, { price_usd: newPrice });
                       console.log('New price for OTROS:', newPrice);
+                    } else {
+                      // Reset to original price if invalid
+                      setCustomPrice(priceUSD.toString());
                     }
                   }}
                   className="bg-gray-700 text-primary-orange font-bold text-lg px-2 py-1 rounded border border-gray-600 focus:border-primary-orange focus:outline-none w-24"
                   step="0.01"
                   min="0"
+                  placeholder="0.00"
                 />
                 <span className="text-primary-orange font-bold text-lg">USD</span>
               </div>
