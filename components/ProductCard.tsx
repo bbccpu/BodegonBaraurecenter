@@ -22,6 +22,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
    // Special handling for "OTROS" product - allow price editing
    const isOtrosProduct = currentProduct.code === 'PBBC9590006200624';
 
+   console.log('Product code:', currentProduct.code, 'isOtrosProduct:', isOtrosProduct);
+
    // State for custom price editing
    const [customPrice, setCustomPrice] = React.useState(priceUSD.toString());
 
@@ -46,16 +48,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 <input
                   type="number"
                   value={customPrice}
-                  onChange={(e) => setCustomPrice(e.target.value)}
-                  onBlur={(e) => {
+                  onChange={(e) => {
+                    setCustomPrice(e.target.value);
                     const newPrice = parseFloat(e.target.value);
                     if (!isNaN(newPrice) && newPrice >= 0) {
-                      // Update price in context for this session
+                      // Update price immediately on change
                       updateProduct(currentProduct.id, { price_usd: newPrice });
                       console.log('New price for OTROS:', newPrice);
-                    } else {
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const newPrice = parseFloat(e.target.value);
+                    if (isNaN(newPrice) || newPrice < 0) {
                       // Reset to original price if invalid
                       setCustomPrice(priceUSD.toString());
+                      updateProduct(currentProduct.id, { price_usd: priceUSD });
                     }
                   }}
                   className="bg-gray-700 text-primary-orange font-bold text-lg px-2 py-1 rounded border border-gray-600 focus:border-primary-orange focus:outline-none w-24"
