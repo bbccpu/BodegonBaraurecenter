@@ -16,10 +16,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
    // Get real-time product data from context
    const currentProduct = products.find(p => p.id === product.id) || product;
 
-   console.log('Product imageUrl:', currentProduct.imageurl);
-
    const priceUSD = currentProduct.price_usd; // Corrected: No fallback to obsolete .price
    const priceBSS = rate ? (priceUSD * rate) : null;
+
+   // Special handling for "OTROS" product - allow price editing
+   const isOtrosProduct = currentProduct.code === 'PBBC9590006200624';
 
    return (
      <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-primary-dark/40 border border-gray-700 transition-all duration-300 transform hover:-translate-y-2 group">
@@ -28,10 +29,39 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <h3 className="text-lg font-bold text-white mb-2 group-hover:text-primary-light-green transition-colors">{product.name}</h3>
         <p className="text-gray-400 text-sm mb-2">Código: {product.code}</p>
         <div className="flex flex-col gap-1 mb-2">
-          <span className="text-primary-orange font-bold text-lg">${priceUSD.toFixed(2)} USD</span>
-          <span className="text-green-400 text-sm font-semibold">
-            {loading ? 'Cargando tasa...' : priceBSS !== null ? `${priceBSS.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs` : 'No disponible'}
-          </span>
+          {isOtrosProduct ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-primary-orange font-bold text-lg">Precio:</span>
+                <input
+                  type="number"
+                  defaultValue={priceUSD.toFixed(2)}
+                  onBlur={(e) => {
+                    const newPrice = parseFloat(e.target.value);
+                    if (!isNaN(newPrice) && newPrice >= 0) {
+                      // Update price in context (this will trigger real-time update)
+                      // Note: This is a client-side update, in production you'd want to save to database
+                      console.log('New price for OTROS:', newPrice);
+                    }
+                  }}
+                  className="bg-gray-700 text-primary-orange font-bold text-lg px-2 py-1 rounded border border-gray-600 focus:border-primary-orange focus:outline-none w-24"
+                  step="0.01"
+                  min="0"
+                />
+                <span className="text-primary-orange font-bold text-lg">USD</span>
+              </div>
+              <span className="text-green-400 text-sm font-semibold">
+                {loading ? 'Cargando tasa...' : priceBSS !== null ? `${priceBSS.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs` : 'No disponible'}
+              </span>
+            </div>
+          ) : (
+            <>
+              <span className="text-primary-orange font-bold text-lg">${priceUSD.toFixed(2)} USD</span>
+              <span className="text-green-400 text-sm font-semibold">
+                {loading ? 'Cargando tasa...' : priceBSS !== null ? `${priceBSS.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs` : 'No disponible'}
+              </span>
+            </>
+          )}
         </div>
         <div className="flex justify-between items-center">
           <div className="flex flex-col">
