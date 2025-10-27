@@ -28,22 +28,28 @@ export const CartPage: React.FC = () => {
     }) => {
         console.log('handlePaymentSubmit called with:', paymentData);
 
-        // Generate sequential payment reference
+        // Generate sequential payment reference with retry logic
         console.log('Generating sequential payment reference...');
-        let paymentReference = 'pagosbbc0001'; // Default first reference
+        let paymentReference = '';
+        let attempts = 0;
+        const maxAttempts = 5;
 
-        try {
-            const { data: lastOrder, error: queryError } = await supabase
-                .from('orders')
-                .select('payment_reference')
-                .not('payment_reference', 'is', null)
-                .order('created_at', { ascending: false })
-                .limit(1);
+        while (attempts < maxAttempts) {
+            try {
+                // Get the highest number from existing references
+                const { data: lastOrder, error: queryError } = await supabase
+                    .from('orders')
+                    .select('payment_reference')
+                    .not('payment_reference', 'is', null)
+                    .order('payment_reference', { ascending: false })
+                    .limit(1);
 
-            if (queryError) {
-                console.error('Error querying last order:', queryError);
-            } else {
-                console.log('Last order query result:', lastOrder);
+                if (queryError) {
+                    console.error('Error querying last order:', queryError);
+                    // Fallback to timestamp-based reference
+                    paymentReference = `pagosbbc${Date.now().toString().slice(-8)}`;
+                    break;
+                }
 
                 let nextNumber = 1;
                 if (lastOrder && lastOrder.length > 0) {
@@ -57,10 +63,41 @@ export const CartPage: React.FC = () => {
                 }
 
                 paymentReference = `pagosbbc${nextNumber.toString().padStart(4, '0')}`;
+
+                // Check if this reference already exists (race condition protection)
+                const { data: existingOrder, error: checkError } = await supabase
+                    .from('orders')
+                    .select('id')
+                    .eq('payment_reference', paymentReference)
+                    .limit(1);
+
+                if (checkError) {
+                    console.error('Error checking existing reference:', checkError);
+                    // Fallback to timestamp-based reference
+                    paymentReference = `pagosbbc${Date.now().toString().slice(-8)}`;
+                    break;
+                }
+
+                if (!existingOrder || existingOrder.length === 0) {
+                    // Reference is unique, we can use it
+                    break;
+                } else {
+                    // Reference already exists, try next number
+                    console.log('Reference already exists, trying next number');
+                    attempts++;
+                }
+
+            } catch (error) {
+                console.error('Error in reference generation:', error);
+                // Fallback to timestamp-based reference
+                paymentReference = `pagosbbc${Date.now().toString().slice(-8)}`;
+                break;
             }
-        } catch (error) {
-            console.error('Error in reference generation:', error);
-            // Use default reference if generation fails
+        }
+
+        if (!paymentReference) {
+            // Ultimate fallback
+            paymentReference = `pagosbbc${Date.now().toString().slice(-8)}`;
         }
 
         console.log('Final payment reference:', paymentReference);
@@ -184,7 +221,7 @@ export const CartPage: React.FC = () => {
                     <div className="space-y-4">
                         {cart.map(item => (
                             <div key={item.id} className="flex items-center space-x-4 border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
-                                <img src={item.imageUrl} alt={item.name} className="w-20 h-20 object-cover rounded-md"/>
+                                <img src={item.imageurl} alt={item.name} className="w-20 h-20 object-cover rounded-md"/>
                                 <div className="flex-grow">
                                     <h3 className="font-bold">{item.name}</h3>
                                                                         <p className="text-sm text-gray-400">${item.price_usd.toFixed(2)} USD</p>
