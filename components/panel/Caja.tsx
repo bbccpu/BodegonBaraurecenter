@@ -225,31 +225,79 @@ const Caja: React.FC = () => {
     };
 
     const generatePaymentReference = async () => {
-        // Get all references from orders table to find the highest number
-        const { data, error } = await supabase
-            .from('orders')
-            .select('payment_reference')
-            .not('payment_reference', 'is', null)
-            .like('payment_reference', 'Pagosbbc%'); // Case-insensitive search for both Pagosbbc and pagosbbc
+        // Generate sequential payment reference with retry logic
+        let paymentReference = '';
+        let attempts = 0;
+        const maxAttempts = 5;
 
-        let nextNumber = 1;
-        if (data && data.length > 0) {
-            // Extract all numbers from existing references (case-insensitive)
-            const numbers = data
-                .map(row => row.payment_reference)
-                .filter(ref => ref)
-                .map(ref => {
-                    const match = ref.match(/pagosbbc(\d+)/i); // Case-insensitive regex
-                    return match ? parseInt(match[1]) : 0;
-                })
-                .filter(num => num > 0);
+        while (attempts < maxAttempts) {
+            try {
+                // Get the highest number from existing references
+                const { data, error } = await supabase
+                    .from('orders')
+                    .select('payment_reference')
+                    .not('payment_reference', 'is', null)
+                    .order('payment_reference', { ascending: false })
+                    .limit(1);
 
-            if (numbers.length > 0) {
-                nextNumber = Math.max(...numbers) + 1;
+                if (error) {
+                    console.error('Error querying last order:', error);
+                    // Fallback to timestamp-based reference
+                    paymentReference = `Pagosbbc${Date.now().toString().slice(-8)}`;
+                    break;
+                }
+
+                let nextNumber = 1;
+                if (data && data.length > 0) {
+                    const lastRef = data[0].payment_reference;
+                    console.log('Last reference found:', lastRef);
+                    const match = lastRef.match(/pagosbbc(\d+)/i); // Case-insensitive
+                    if (match) {
+                        nextNumber = parseInt(match[1]) + 1;
+                        console.log('Next number calculated:', nextNumber);
+                    }
+                }
+
+                paymentReference = `Pagosbbc${nextNumber.toString().padStart(5, '0')}`;
+
+                // Check if this reference already exists (race condition protection)
+                const { data: existingOrder, error: checkError } = await supabase
+                    .from('orders')
+                    .select('id')
+                    .eq('payment_reference', paymentReference)
+                    .limit(1);
+
+                if (checkError) {
+                    console.error('Error checking existing reference:', checkError);
+                    // Fallback to timestamp-based reference
+                    paymentReference = `Pagosbbc${Date.now().toString().slice(-8)}`;
+                    break;
+                }
+
+                if (!existingOrder || existingOrder.length === 0) {
+                    // Reference is unique, we can use it
+                    break;
+                } else {
+                    // Reference already exists, try next number
+                    console.log('Reference already exists, trying next number');
+                    attempts++;
+                }
+
+            } catch (error) {
+                console.error('Error in reference generation:', error);
+                // Fallback to timestamp-based reference
+                paymentReference = `Pagosbbc${Date.now().toString().slice(-8)}`;
+                break;
             }
         }
 
-        return `Pagosbbc${nextNumber.toString().padStart(5, '0')}`;
+        if (!paymentReference) {
+            // Ultimate fallback
+            paymentReference = `Pagosbbc${Date.now().toString().slice(-8)}`;
+        }
+
+        console.log('Final payment reference:', paymentReference);
+        return paymentReference;
     };
 
     const addPaymentMethod = () => {
