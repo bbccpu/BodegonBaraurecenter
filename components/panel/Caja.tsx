@@ -44,6 +44,26 @@ const Caja: React.FC = () => {
     const { products } = useProducts();
     const { rate, loading } = useDollarRate();
 
+    // Get current user info
+    const getCurrentUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            // For caja control, use email as identifier since each caja has different email
+            const cajaNames: { [key: string]: string } = {
+                'bbccaja1@proton.me': 'Caja 1',
+                'bbccaja2@proton.me': 'Caja 2',
+                'bbccaja3@proton.me': 'Caja 3',
+                'bbccaja4@proton.me': 'Caja 4',
+                'bbccaja4@hotmail.com': 'Caja 5',
+                'gehidimarbriceno@gmail.com': 'Caja 6'
+            };
+
+            const cajaName = cajaNames[user.email] || `Caja ${user.email}`;
+            return cajaName;
+        }
+        return 'Caja Desconocida';
+    };
+
     useEffect(() => {
         const fetchCustomerProfiles = async () => {
             try {
@@ -363,6 +383,9 @@ const Caja: React.FC = () => {
             const reference = await generatePaymentReference();
             console.log('Generated reference:', reference); // Debug log
 
+            // Get current user info
+            const currentUser = await getCurrentUser();
+
             // Convert payment methods array to a formatted string for storage
             const paymentMethodsText = paymentMethods.map(p =>
                 `${p.method.replace('_', ' ').toUpperCase()}: $${p.amount.toFixed(2)}${p.reference ? ` (Ref: ${p.reference})` : ''}`
@@ -387,7 +410,10 @@ const Caja: React.FC = () => {
                 shipping_name: selectedCustomer?.nombre,
                 shipping_lastname: selectedCustomer?.apellido,
                 shipping_id: selectedCustomer?.cedula,
-                shipping_phone: selectedCustomer?.phone
+                shipping_phone: selectedCustomer?.phone,
+                // Add user tracking
+                created_by: currentUser,
+                processed_at: new Date().toISOString()
             };
 
             console.log('Order data to save:', orderData); // Debug log
@@ -923,8 +949,10 @@ const Caja: React.FC = () => {
                             <div className="mb-2">
                                 <div><strong>Factura:</strong> {lastOrder.payment_reference}</div>
                                 <div><strong>Fecha:</strong> {new Date(lastOrder.date).toLocaleDateString('es-VE')}</div>
+                                <div><strong>Hora:</strong> {new Date(lastOrder.processed_at || lastOrder.date).toLocaleTimeString('es-VE')}</div>
                                 <div><strong>Cliente:</strong> {lastOrder.customername || 'Cliente General'}</div>
                                 {lastOrder.shipping_id && <div><strong>CI:</strong> {lastOrder.shipping_id}</div>}
+                                <div><strong>Usuario:</strong> {lastOrder.created_by || 'Sistema'}</div>
                             </div>
 
                             <div className="border-t border-b border-black py-2 my-2">
