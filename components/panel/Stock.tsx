@@ -273,11 +273,11 @@ const Stock: React.FC = () => {
                                             type="number"
                                             id={`price-${product.id}`}
                                             name="price_usd"
-                                            defaultValue={priceUSD.toFixed(2)}
+                                            defaultValue={priceUSD.toFixed(6)}
                                             onBlur={(e) => handlePriceChange(product.id, e.target.value)}
                                             className="w-16 md:w-20 bg-gray-700 text-primary-orange text-right rounded border border-gray-600 focus:ring-1 focus:ring-primary-orange focus:border-primary-orange text-sm"
                                             min="0"
-                                            step="0.01"
+                                            step="0.000001"
                                             aria-label={`Precio USD de ${product.name}`}
                                         />
                                     </td>
