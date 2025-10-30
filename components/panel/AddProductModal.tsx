@@ -122,7 +122,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="price_usd" className="block text-sm font-medium text-gray-300 mb-1">Precio (USD)</label>
-                            <input id="price_usd" name="price_usd" type="number" value={formData.price_usd} onChange={handleChange} className="w-full bg-gray-700 border border-gray-500 rounded-md py-2 px-3 text-white" step="0.01" min="0" placeholder="0.00" required />
+                            <input id="price_usd" name="price_usd" type="number" value={formData.price_usd} onChange={handleChange} className="w-full bg-gray-700 border border-gray-500 rounded-md py-2 px-3 text-white" step="0.000001" min="0" placeholder="0.000000" required />
                         </div>
                         <div>
                             <label htmlFor="price_bss" className="block text-sm font-medium text-gray-300 mb-1">Precio (BSS)</label>
