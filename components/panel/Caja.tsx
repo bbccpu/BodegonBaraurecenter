@@ -39,6 +39,7 @@ const Caja: React.FC = () => {
     const [currentPaymentAmount, setCurrentPaymentAmount] = useState<string>('');
     const [currentPaymentReference, setCurrentPaymentReference] = useState<string>('');
     const [lastOrder, setLastOrder] = useState<any>(null);
+    const [showInvoicePreview, setShowInvoicePreview] = useState(false);
 
     const { products } = useProducts();
     const { rate, loading } = useDollarRate();
@@ -740,12 +741,20 @@ const Caja: React.FC = () => {
                         {lastOrder && (
                             <div className="mb-4 p-4 bg-green-800 rounded-lg">
                                 <p className="text-green-200 font-bold">Última venta: {lastOrder.payment_reference}</p>
-                                <button
-                                    onClick={printInvoice}
-                                    className="mt-2 w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                                >
-                                    Imprimir Factura
-                                </button>
+                                <div className="flex space-x-2 mt-2">
+                                    <button
+                                        onClick={() => setShowInvoicePreview(true)}
+                                        className="flex-1 bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700 transition-colors"
+                                    >
+                                        Previsualizar Factura
+                                    </button>
+                                    <button
+                                        onClick={printInvoice}
+                                        className="flex-1 bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                                    >
+                                        Imprimir Factura
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -798,9 +807,15 @@ const Caja: React.FC = () => {
                                         <span className="font-bold text-green-400">${totalPaid.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span>Restante:</span>
+                                        <span>Restante USD:</span>
                                         <span className={`font-bold ${Math.max(0, total - totalPaid) > 0 ? 'text-red-400' : 'text-green-400'}`}>
                                             ${Math.max(0, total - totalPaid).toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Restante Bs:</span>
+                                        <span className={`font-bold ${Math.max(0, total - totalPaid) > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                                            {loading ? 'Cargando...' : rate ? `${(Math.max(0, total - totalPaid) * rate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs` : 'No disponible'}
                                         </span>
                                     </div>
                                 </div>
@@ -879,6 +894,81 @@ const Caja: React.FC = () => {
                                 className="flex-1 bg-gray-600 text-white font-bold py-2 rounded-lg hover:bg-gray-700 transition-colors"
                             >
                                 Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Invoice Preview Modal */}
+            {showInvoicePreview && lastOrder && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold">Previsualización de Factura</h3>
+                            <button
+                                onClick={() => setShowInvoicePreview(false)}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                <ion-icon name="close-outline" style={{fontSize: '24px'}}></ion-icon>
+                            </button>
+                        </div>
+
+                        <div className="bg-white text-black p-4 rounded-lg font-mono text-sm">
+                            <div className="text-center border-b-2 border-black pb-2 mb-2">
+                                <div className="font-bold text-lg">BODEGON BARAURE CENTER 2025 C.A</div>
+                                <div>RIF: J-3507270106</div>
+                            </div>
+
+                            <div className="mb-2">
+                                <div><strong>Factura:</strong> {lastOrder.payment_reference}</div>
+                                <div><strong>Fecha:</strong> {new Date(lastOrder.date).toLocaleDateString('es-VE')}</div>
+                                <div><strong>Cliente:</strong> {lastOrder.customername || 'Cliente General'}</div>
+                                {lastOrder.shipping_id && <div><strong>CI:</strong> {lastOrder.shipping_id}</div>}
+                            </div>
+
+                            <div className="border-t border-b border-black py-2 my-2">
+                                <div className="grid grid-cols-3 gap-2 font-bold mb-1">
+                                    <div>Producto</div>
+                                    <div className="text-center">Cant</div>
+                                    <div className="text-right">Total</div>
+                                </div>
+                                {lastOrder.items.map((item: any, index: number) => (
+                                    <div key={index} className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="truncate">{item.productName.substring(0, 15)}</div>
+                                        <div className="text-center">{item.quantity}</div>
+                                        <div className="text-right">{((item.price * rate) * item.quantity).toFixed(0)}Bs</div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="text-right font-bold text-lg">
+                                TOTAL: {(lastOrder.total * rate).toFixed(0)} Bs
+                            </div>
+
+                            <div className="mt-2 text-xs">
+                                <div><strong>Método:</strong> {lastOrder.payment_method?.substring(0, 25) || 'N/A'}</div>
+                                {lastOrder.payment_reference && <div><strong>Ref:</strong> {lastOrder.payment_reference}</div>}
+                            </div>
+
+                            <div className="text-center text-xs mt-2 border-t border-black pt-2">
+                                Gracias por su preferencia!<br/>
+                                Factura válida para crédito fiscal
+                            </div>
+                        </div>
+
+                        <div className="flex space-x-4 mt-6">
+                            <button
+                                onClick={printInvoice}
+                                className="flex-1 bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Imprimir
+                            </button>
+                            <button
+                                onClick={() => setShowInvoicePreview(false)}
+                                className="flex-1 bg-gray-600 text-white font-bold py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                            >
+                                Cerrar
                             </button>
                         </div>
                     </div>
