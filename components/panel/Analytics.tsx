@@ -683,28 +683,46 @@ const Analytics: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 <ChartCard title="Métodos de Pago Utilizados">
                     <canvas ref={paymentMethodsChartRef}></canvas>
-                    {/* Payment Methods Summary Table */}
-                    <div className="mt-4 space-y-2">
-                        <h4 className="text-sm font-semibold text-white mb-2">Resumen por Método:</h4>
+                </ChartCard>
+                <ChartCard title="Clientes Más Valiosos">
+                    <canvas ref={customerValueChartRef}></canvas>
+                </ChartCard>
+            </div>
+
+            {/* Payment Methods Summary Table - Moved below */}
+            <div className="mb-8">
+                <ChartCard title="Resumen Detallado de Métodos de Pago">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {analyticsData.paymentMethods.map((method, index) => (
-                            <div key={method.method} className="flex justify-between items-center p-2 bg-gray-700 rounded text-sm">
-                                <div className="flex items-center space-x-2">
+                            <div key={method.method} className="bg-gray-700 p-4 rounded-lg">
+                                <div className="flex items-center space-x-3 mb-2">
                                     <div
-                                        className="w-3 h-3 rounded-full"
+                                        className="w-4 h-4 rounded-full flex-shrink-0"
                                         style={{ backgroundColor: ['#f57c00', '#004d40', '#a2c13c', '#DC2626', '#8D1C3D', '#7C3AED'][index % 6] }}
                                     ></div>
-                                    <span className="text-gray-200">{method.method}</span>
+                                    <h4 className="text-white font-medium text-sm">{method.method}</h4>
                                 </div>
-                                <div className="text-right">
-                                    <div className="text-white font-medium">{method.count} pagos</div>
-                                    <div className="text-green-400 text-xs">${method.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-400">Transacciones:</span>
+                                        <span className="text-white font-medium">{method.count.toLocaleString('es-ES')}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-400">Monto total:</span>
+                                        <span className="text-green-400 font-medium">${method.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-400">Porcentaje:</span>
+                                        <span className="text-blue-400 font-medium">{method.percentage.toFixed(1)}%</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-400">Promedio:</span>
+                                        <span className="text-purple-400 font-medium">${(method.total / method.count).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span>
+                                    </div>
                                 </div>
                             </div>
                         ))}
                     </div>
-                </ChartCard>
-                <ChartCard title="Clientes Más Valiosos">
-                    <canvas ref={customerValueChartRef}></canvas>
                 </ChartCard>
             </div>
 
