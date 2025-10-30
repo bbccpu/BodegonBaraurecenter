@@ -224,7 +224,7 @@ export const CartPage: React.FC = () => {
                                 <img src={item.imageurl} alt={item.name} className="w-20 h-20 object-cover rounded-md"/>
                                 <div className="flex-grow">
                                     <h3 className="font-bold">{item.name}</h3>
-                                                                        <p className="text-sm text-gray-400">${item.price_usd.toFixed(2)} USD</p>
+                                                                        <p className="text-sm text-gray-400">${item.price_usd.toFixed(6)} USD</p>
                                                                         <p className="text-xs text-green-400 font-semibold">
                                                                             {loading ? 'Cargando...' : rate ? `${(item.price_usd * rate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs` : 'No disponible'}
                                                                         </p>
@@ -238,7 +238,7 @@ export const CartPage: React.FC = () => {
                                         min="1"
                                     />
                                                                         <div className="w-24 text-right">
-                                                                            <p className="font-bold">${(item.price_usd * item.cartQuantity).toFixed(2)} USD</p>
+                                                                            <p className="font-bold">${(item.price_usd * item.cartQuantity).toFixed(6)} USD</p>
                                                                             <p className="text-xs text-green-400 font-semibold">
                                                                                 {loading ? 'Cargando...' : rate ? `${((item.price_usd * item.cartQuantity) * rate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs` : 'No disponible'}
                                                                             </p>
@@ -257,7 +257,7 @@ export const CartPage: React.FC = () => {
                     <h2 className="text-2xl font-bold mb-4 border-b border-gray-700 pb-2">Total</h2>
                     <div className="flex justify-between mb-2">
                         <span className="text-gray-300">Subtotal</span>
-                        <span className="font-bold text-white text-xl">${totalPrice.toFixed(2)} USD</span>
+                        <span className="font-bold text-white text-xl">${totalPrice.toFixed(6)} USD</span>
                     </div>
                     <div className="flex justify-between mb-6">
                         <span className="text-gray-300">Subtotal en Bs</span>
