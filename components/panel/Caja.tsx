@@ -434,25 +434,71 @@ const Caja: React.FC = () => {
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
-        // ESC/POS commands for thermal printer (HOP-H58 compatible)
+        // Calculate totals in Bs using current rate
+        const totalBs = (lastOrder.total * rate).toFixed(0);
+
+        // Direct ESC/POS commands for thermal printer (no HTML, direct printer control)
         const escposCommands = {
             init: '\x1b\x40', // Initialize printer
-            center: '\x1b\x61\x01', // Center alignment
-            left: '\x1b\x61\x00', // Left alignment
-            bold: '\x1b\x45\x01', // Bold on
-            normal: '\x1b\x45\x00', // Bold off
+            alignCenter: '\x1b\x61\x01', // Center alignment
+            alignLeft: '\x1b\x61\x00', // Left alignment
+            boldOn: '\x1b\x45\x01', // Bold on
+            boldOff: '\x1b\x45\x00', // Bold off
+            doubleHeightOn: '\x1b\x21\x10', // Double height
+            doubleHeightOff: '\x1b\x21\x00', // Normal height
             cut: '\x1d\x56\x42\x00', // Full cut
-            feed: '\n\n\n' // Feed paper
+            feed: '\n\n' // Minimal feed
         };
 
-        // Calculate totals in Bs using current rate
-        const calculateItemTotalBs = (price: number, quantity: number) => {
-            const totalBs = (price * rate * quantity);
-            return totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        };
+        // Build ESC/POS receipt data
+        let receiptData = escposCommands.init;
+        receiptData += escposCommands.alignCenter;
+        receiptData += escposCommands.boldOn;
+        receiptData += 'BODEGON BARAURE CENTER 2025 C.A.\n';
+        receiptData += 'RIF: J-3507270106\n';
+        receiptData += escposCommands.boldOff;
+        receiptData += '================================\n';
 
-        const totalBs = (lastOrder.total * rate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        // Customer info
+        if (lastOrder.customerName && lastOrder.customerName !== 'Cliente General') {
+            receiptData += lastOrder.customerName + '\n';
+        }
+        if (lastOrder.shipping_id) {
+            receiptData += 'CI: ' + lastOrder.shipping_id + '\n';
+        }
+        receiptData += '--------------------------------\n';
 
+        // Invoice details
+        receiptData += 'Factura: ' + lastOrder.payment_reference + '\n';
+        receiptData += 'Fecha: ' + new Date(lastOrder.date).toLocaleDateString('es-VE') + '\n';
+        receiptData += '--------------------------------\n';
+
+        // Items
+        lastOrder.items.forEach((item: any) => {
+            receiptData += item.productName.substring(0, 20) + '\n';
+            receiptData += item.quantity + 'x' + (item.price * rate).toFixed(0) + '=' + (item.price * rate * item.quantity).toFixed(0) + 'Bs\n';
+        });
+
+        receiptData += '================================\n';
+        receiptData += escposCommands.doubleHeightOn;
+        receiptData += escposCommands.boldOn;
+        receiptData += 'TOTAL: ' + totalBs + ' Bs\n';
+        receiptData += escposCommands.boldOff;
+        receiptData += escposCommands.doubleHeightOff;
+
+        // Payment info
+        receiptData += lastOrder.payment_method.substring(0, 30) + '\n';
+        if (lastOrder.payment_reference) {
+            receiptData += 'Ref: ' + lastOrder.payment_reference + '\n';
+        }
+
+        receiptData += '================================\n';
+        receiptData += 'Gracias por su preferencia!\n';
+        receiptData += 'Factura valida para credito fiscal\n';
+        receiptData += escposCommands.cut;
+        receiptData += escposCommands.feed;
+
+        // Create a simple HTML wrapper that sends raw data to printer
         const invoiceHTML = `
             <html>
             <head>
@@ -467,79 +513,47 @@ const Caja: React.FC = () => {
                             width: 48mm;
                             font-family: 'Courier New', monospace;
                             font-size: 9px;
-                            line-height: 1.1;
+                            line-height: 1.0;
                             margin: 0;
-                            padding: 1mm;
+                            padding: 0;
+                            white-space: pre-wrap;
                         }
                     }
                     body {
                         font-family: 'Courier New', monospace;
                         font-size: 9px;
-                        line-height: 1.1;
+                        line-height: 1.0;
                         max-width: 48mm;
                         margin: 0 auto;
-                        padding: 1mm;
+                        padding: 0;
+                        white-space: pre-wrap;
                     }
-                    .center { text-align: center; }
-                    .bold { font-weight: bold; }
-                    .line { border-bottom: 1px solid #000; margin: 2px 0; }
-                    table { width: 100%; border-collapse: collapse; font-size: 8px; }
-                    th, td { text-align: left; padding: 1px 0; }
-                    .total { font-weight: bold; font-size: 11px; }
-                    .small { font-size: 7px; }
-                    .tiny { font-size: 6px; }
                 </style>
             </head>
             <body>
-                <div class="center bold">
-                    BODEGÓN BARAURE CENTER 2025 C.A.<br>
-                    RIF: J-3507270106<br>
-                    <div class="tiny">
-                        CALLE 8 EDIF 2 BLOQUE 7 PISO PB<br>
-                        LOCAL 50 URB BARAURE SECTOR 2<br>
-                        ARAURE PORTUGUESA ZONA POSTAL 3303
-                    </div>
-                </div>
-                <div class="line"></div>
-                <div class="small center bold">
-                    EMITIDO POR: BODEGÓN BARAURE CENTER 2025 C.A.<br>
-                    RAZÓN SOCIAL: ${lastOrder.customerName || 'Cliente General'}<br>
-                    ${lastOrder.shipping_id ? `CÉDULA/RIF: ${lastOrder.shipping_id}` : ''}
-                </div>
-                <div class="line"></div>
-                <div class="small">
-                    <strong>Factura:</strong> ${lastOrder.payment_reference}<br>
-                    <strong>Fecha:</strong> ${new Date(lastOrder.date).toLocaleString('es-VE')}<br>
-                </div>
-                <div class="line"></div>
-                <table>
-                    <tbody>
-                        ${lastOrder.items.map((item: any) => `
-                            <tr>
-                                <td colspan="4" class="small">${item.productName}</td>
-                            </tr>
-                            <tr>
-                                <td>${item.quantity} x</td>
-                                <td>${(item.price * rate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</td>
-                                <td colspan="2" style="text-align: right;">${calculateItemTotalBs(item.price, item.quantity)} Bs</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                <div class="line"></div>
-                <div class="total center">
-                    TOTAL: ${totalBs} Bs
-                </div>
-                <div class="center small">
-                    <strong>Método:</strong> ${lastOrder.payment_method}<br>
-                    ${lastOrder.payment_reference ? `<strong>Ref:</strong> ${lastOrder.payment_reference}` : ''}
-                </div>
-                <div class="line"></div>
-                <div class="center tiny">
-                    ¡Gracias por su preferencia!<br>
-                    <span class="small">Conserve esta factura - Factura válida para crédito fiscal</span>
-                </div>
-                <div style="height: 8mm;"></div>
+                <div style="display: none;">${btoa(receiptData)}</div>
+                <pre>${[
+                    'BODEGON BARAURE CENTER 2025 C.A.',
+                    'RIF: J-3507270106',
+                    '================================',
+                    lastOrder.customerName || 'Cliente General',
+                    lastOrder.shipping_id ? `CI: ${lastOrder.shipping_id}` : '',
+                    '--------------------------------',
+                    `Factura: ${lastOrder.payment_reference}`,
+                    `Fecha: ${new Date(lastOrder.date).toLocaleDateString('es-VE')}`,
+                    '--------------------------------',
+                    ...lastOrder.items.flatMap((item: any) => [
+                        item.productName.substring(0, 20),
+                        `${item.quantity}x${(item.price * rate).toFixed(0)}=${(item.price * rate * item.quantity).toFixed(0)}Bs`
+                    ]),
+                    '================================',
+                    `TOTAL: ${totalBs} Bs`,
+                    lastOrder.payment_method.substring(0, 30),
+                    lastOrder.payment_reference ? `Ref: ${lastOrder.payment_reference}` : '',
+                    '================================',
+                    'Gracias por su preferencia!',
+                    'Factura valida para credito fiscal'
+                ].join('\n')}</pre>
             </body>
             </html>
         `;
