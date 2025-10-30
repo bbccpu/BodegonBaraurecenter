@@ -13,7 +13,7 @@ interface AnalyticsData {
     topProducts: Array<{ name: string; sold: number; revenue: number }>;
     salesByCategory: Array<{ category: string; sales: number; percentage: number }>;
     salesByPeriod: Array<{ period: string; sales: number; orders: number }>;
-    paymentMethods: Array<{ method: string; count: number; percentage: number }>;
+    paymentMethods: Array<{ method: string; count: number; total: number; percentage: number }>;
     customerAnalytics: {
         totalCustomers: number;
         averageOrdersPerCustomer: number;
@@ -172,24 +172,45 @@ const Analytics: React.FC = () => {
             // Sales by period (daily for last 30 days, weekly for longer periods)
             const salesByPeriod = await calculateSalesByPeriod(orders || [], dateRange);
 
-            // Payment methods analysis
-            const paymentMethodsCount: { [key: string]: number } = {};
+            // Payment methods analysis - parse the formatted payment_method string
+            const paymentMethodsCount: { [key: string]: { count: number; total: number } } = {};
             orders?.forEach(order => {
-                const method = order.payment_method || 'No especificado';
-                paymentMethodsCount[method] = (paymentMethodsCount[method] || 0) + 1;
+                if (order.payment_method) {
+                    // Split by ' | ' to get individual payment methods
+                    const paymentStrings = order.payment_method.split(' | ');
+                    paymentStrings.forEach(paymentStr => {
+                        // Extract method and amount using regex
+                        const match = paymentStr.match(/^([^:]+):\s*\$\s*([\d.]+)(?:\s*\([^)]*\))?$/);
+                        if (match) {
+                            const [, method, amountStr] = match;
+                            const amount = parseFloat(amountStr);
+
+                            // Normalize method names
+                            let normalizedMethod = method.trim();
+                            if (normalizedMethod === 'efectivo_usd') normalizedMethod = 'Efectivo USD';
+                            else if (normalizedMethod === 'efectivo_bs') normalizedMethod = 'Efectivo Bs';
+                            else if (normalizedMethod === 'pago_movil') normalizedMethod = 'Pago Móvil';
+                            else if (normalizedMethod === 'banco_venezuela') normalizedMethod = 'Banco Venezuela';
+                            else if (normalizedMethod === 'cashea') normalizedMethod = 'Cashea';
+                            else if (normalizedMethod === 'puntos') normalizedMethod = 'Puntos';
+
+                            if (!paymentMethodsCount[normalizedMethod]) {
+                                paymentMethodsCount[normalizedMethod] = { count: 0, total: 0 };
+                            }
+                            paymentMethodsCount[normalizedMethod].count += 1;
+                            paymentMethodsCount[normalizedMethod].total += amount;
+                        }
+                    });
+                }
             });
 
-            const totalPayments = Object.values(paymentMethodsCount).reduce((sum, count) => sum + count, 0);
+            const totalPayments = Object.values(paymentMethodsCount).reduce((sum, data) => sum + data.count, 0);
             const paymentMethods = Object.entries(paymentMethodsCount)
-                .map(([method, count]) => ({
-                    method: method === 'efectivo_usd' ? 'Efectivo USD' :
-                           method === 'efectivo_bs' ? 'Efectivo Bs' :
-                           method === 'pago_movil' ? 'Pago Móvil' :
-                           method === 'banco_venezuela' ? 'Banco Venezuela' :
-                           method === 'cashea' ? 'Cashea' :
-                           method === 'puntos' ? 'Puntos' : method,
-                    count,
-                    percentage: totalPayments > 0 ? (count / totalPayments) * 100 : 0
+                .map(([method, data]) => ({
+                    method,
+                    count: data.count,
+                    total: data.total,
+                    percentage: totalPayments > 0 ? (data.count / totalPayments) * 100 : 0
                 }))
                 .sort((a, b) => b.count - a.count);
 
@@ -417,7 +438,7 @@ const Analytics: React.FC = () => {
                 new Chart(ctx, {
                     type: 'pie',
                     data: {
-                        labels: analyticsData.paymentMethods.map(m => m.method),
+                        labels: analyticsData.paymentMethods.map(m => `${m.method}\n${m.count} pagos\n$${m.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`),
                         datasets: [{
                             data: analyticsData.paymentMethods.map(m => m.count),
                             backgroundColor: [
@@ -430,13 +451,24 @@ const Analytics: React.FC = () => {
                         maintainAspectRatio: false,
                         responsive: true,
                         plugins: {
-                            legend: { position: 'bottom', labels: { color: '#D1D5DB' } },
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#D1D5DB',
+                                    font: { size: 11 },
+                                    padding: 10
+                                }
+                            },
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
-                                        const value = context.parsed;
-                                        const percentage = analyticsData.paymentMethods[context.dataIndex]?.percentage || 0;
-                                        return `${value} órdenes (${percentage.toFixed(1)}%)`;
+                                        const method = analyticsData.paymentMethods[context.dataIndex];
+                                        return [
+                                            `${method.method}`,
+                                            `${method.count} pagos realizados`,
+                                            `Total: $${method.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`,
+                                            `${method.percentage.toFixed(1)}% del total`
+                                        ];
                                     }
                                 }
                             }
@@ -535,7 +567,7 @@ const Analytics: React.FC = () => {
                 />
                 <StatCard
                     title="Total de Órdenes"
-                    value={analyticsData.totalOrders.toLocaleString('es-ES')}
+                    value={analyticsData.totalOrders.toLocaleString('es-ES', { minimumIntegerDigits: 1, maximumFractionDigits: 0 })}
                     subtitle={`${analyticsData.totalOrders > 0 ? (analyticsData.totalSales / analyticsData.totalOrders).toLocaleString('es-ES', { minimumFractionDigits: 2 }) : '0'} promedio por orden`}
                     icon="receipt-outline"
                 />
@@ -589,14 +621,20 @@ const Analytics: React.FC = () => {
                             </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-400">Porcentaje:</span>
+                            <span className="text-gray-400">Total transacciones:</span>
                             <span className="text-green-400 font-medium">
-                                {analyticsData.paymentMethods[0]?.percentage.toFixed(1) || '0'}%
+                                {analyticsData.paymentMethods.reduce((sum, m) => sum + m.count, 0).toLocaleString('es-ES')}
+                            </span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-400">Monto total:</span>
+                            <span className="text-blue-400 font-medium">
+                                ${analyticsData.paymentMethods.reduce((sum, m) => sum + m.total, 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                             </span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-400">Métodos usados:</span>
-                            <span className="text-blue-400 font-medium">
+                            <span className="text-purple-400 font-medium">
                                 {analyticsData.paymentMethods.length}
                             </span>
                         </div>
@@ -645,6 +683,25 @@ const Analytics: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 <ChartCard title="Métodos de Pago Utilizados">
                     <canvas ref={paymentMethodsChartRef}></canvas>
+                    {/* Payment Methods Summary Table */}
+                    <div className="mt-4 space-y-2">
+                        <h4 className="text-sm font-semibold text-white mb-2">Resumen por Método:</h4>
+                        {analyticsData.paymentMethods.map((method, index) => (
+                            <div key={method.method} className="flex justify-between items-center p-2 bg-gray-700 rounded text-sm">
+                                <div className="flex items-center space-x-2">
+                                    <div
+                                        className="w-3 h-3 rounded-full"
+                                        style={{ backgroundColor: ['#f57c00', '#004d40', '#a2c13c', '#DC2626', '#8D1C3D', '#7C3AED'][index % 6] }}
+                                    ></div>
+                                    <span className="text-gray-200">{method.method}</span>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-white font-medium">{method.count} pagos</div>
+                                    <div className="text-green-400 text-xs">${method.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </ChartCard>
                 <ChartCard title="Clientes Más Valiosos">
                     <canvas ref={customerValueChartRef}></canvas>
