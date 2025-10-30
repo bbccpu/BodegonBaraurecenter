@@ -3,6 +3,7 @@ import type { Order, UserRole } from '../../types';
 // Fix: Import for side-effects to load global custom JSX element types for ion-icon.
 import '../../types';
 import { supabase } from '../../lib/supabaseClient';
+import { useDollarRate } from '../../context/DollarRateContext';
 
 const getStatusColor = (status: Order['status']) => {
   switch (status) {
@@ -15,11 +16,12 @@ const getStatusColor = (status: Order['status']) => {
 };
 
 const OrderDetailModal: React.FC<{
-    order: Order;
+    order: Order & { showInvoice?: boolean; processed_at?: string; created_by?: string };
     onClose: () => void;
     onStatusChange: (orderId: string, newStatus: Order['status']) => void;
     canModifyStatus: boolean;
 }> = ({ order, onClose, onStatusChange, canModifyStatus }) => {
+    const { rate, loading: rateLoading } = useDollarRate();
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
             <div className="bg-gray-800 rounded-lg shadow-2xl p-8 w-full max-w-2xl m-4 relative border border-gray-700 max-h-[90vh] flex flex-col">
@@ -101,8 +103,57 @@ const OrderDetailModal: React.FC<{
                     </table>
                 </div>
 
-                <div className="mt-6 text-right">
-                    <p className="text-2xl font-bold">Total: <span className="text-primary-orange">${order.total.toFixed(2)}</span></p>
+                <div className="mt-6 text-right space-y-2">
+                    <p className="text-2xl font-bold">Total USD: <span className="text-primary-orange">${order.total.toFixed(2)}</span></p>
+                    <p className="text-xl font-bold text-green-400">
+                        Total Bs: {rateLoading ? 'Cargando...' : rate ? `${(order.total * rate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs` : 'No disponible'}
+                    </p>
+                    {order.showInvoice && order.status === 'Completado' && (
+                        <div className="mt-6 p-4 bg-white text-black rounded-lg font-mono text-sm border-2 border-gray-300">
+                            <div className="text-center border-b-2 border-black pb-2 mb-2">
+                                <div className="font-bold text-lg">BODEGON BARAURE CENTER 2025 C.A</div>
+                                <div>RIF: J-3507270106</div>
+                            </div>
+
+                            <div className="mb-2">
+                                <div><strong>Factura:</strong> {order.payment_reference}</div>
+                                <div><strong>Fecha:</strong> {new Date(order.date).toLocaleDateString('es-VE')}</div>
+                                <div><strong>Hora:</strong> {new Date(order.processed_at || order.date).toLocaleTimeString('es-VE')}</div>
+                                <div><strong>Cliente:</strong> {order.customerName || 'Cliente General'}</div>
+                                {order.shipping_id && <div><strong>CI:</strong> {order.shipping_id}</div>}
+                                <div><strong>Usuario:</strong> {order.created_by || 'Sistema'}</div>
+                            </div>
+
+                            <div className="border-t border-b border-black py-2 my-2">
+                                <div className="grid grid-cols-3 gap-2 font-bold mb-1">
+                                    <div>Producto</div>
+                                    <div className="text-center">Cant</div>
+                                    <div className="text-right">Total</div>
+                                </div>
+                                {order.items.map((item: any, index: number) => (
+                                    <div key={index} className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="truncate">{item.productName.substring(0, 15)}</div>
+                                        <div className="text-center">{item.quantity}</div>
+                                        <div className="text-right">{((item.price * rate) * item.quantity).toFixed(0)}Bs</div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="text-right font-bold text-lg">
+                                TOTAL: {(order.total * rate).toFixed(0)} Bs
+                            </div>
+
+                            <div className="mt-2 text-xs">
+                                <div><strong>Método:</strong> {order.payment_method?.substring(0, 25) || 'N/A'}</div>
+                                {order.payment_reference && <div><strong>Ref:</strong> {order.payment_reference}</div>}
+                            </div>
+
+                            <div className="text-center text-xs mt-2 border-t border-black pt-2">
+                                Gracias por su preferencia!<br/>
+                                Factura válida para crédito fiscal
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -115,8 +166,9 @@ interface PedidosProps {
 
 const Pedidos: React.FC<PedidosProps> = ({ userRole }) => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<(Order & { showInvoice?: boolean }) | null>(null);
   const [loading, setLoading] = useState(true);
+  const { rate, loading: rateLoading } = useDollarRate();
 
   useEffect(() => {
     fetchOrders();
@@ -127,7 +179,8 @@ const Pedidos: React.FC<PedidosProps> = ({ userRole }) => {
       const { data, error } = await supabase
         .from('orders')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(1000); // Limit to prevent performance issues
 
       if (error) {
         console.error('Error fetching orders:', error);
@@ -151,7 +204,9 @@ const Pedidos: React.FC<PedidosProps> = ({ userRole }) => {
         shipping_name: order.shipping_name,
         shipping_lastname: order.shipping_lastname,
         shipping_id: order.shipping_id,
-        shipping_phone: order.shipping_phone
+        shipping_phone: order.shipping_phone,
+        processed_at: order.processed_at,
+        created_by: order.created_by
       }));
 
       setOrders(transformedOrders);
@@ -246,13 +301,21 @@ const Pedidos: React.FC<PedidosProps> = ({ userRole }) => {
                     </span>
                   </td>
                   <td className="p-4 text-right font-bold text-primary-orange">${order.total.toFixed(2)}</td>
-                  <td className="p-4 text-center">
+                  <td className="p-4 text-center space-x-2">
                     <button
                       onClick={() => setSelectedOrder(order)}
-                      className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded"
+                      className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded text-sm"
                     >
                       Ver Detalles
                     </button>
+                    {order.status === 'Completado' && (
+                      <button
+                        onClick={() => setSelectedOrder({...order, showInvoice: true})}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm"
+                      >
+                        Ver Factura
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
