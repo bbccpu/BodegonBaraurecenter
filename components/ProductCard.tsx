@@ -78,7 +78,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </div>
           ) : (
             <>
-              <span className="text-primary-orange font-bold text-lg">${priceUSD.toFixed(2)} USD</span>
+              <span className="text-primary-orange font-bold text-lg">${priceUSD.toFixed(6)} USD</span>
               <span className="text-green-400 text-sm font-semibold">
                 {loading ? 'Cargando tasa...' : priceBSS !== null ? `${priceBSS.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs` : 'No disponible'}
               </span>
